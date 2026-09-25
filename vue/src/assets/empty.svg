@@ -1,0 +1,8 @@
+<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">暂无商品</title>
+  <desc id="desc">当前没有可展示的商品</desc>
+  <rect x="35" y="35" width="130" height="80" rx="8" fill="#f5f7fa" stroke="#dcdfe6" stroke-width="4"/>
+  <path d="M50 58h100M50 76h70M50 94h45" stroke="#c0c4cc" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="145" cy="100" r="22" fill="#fff" stroke="#909399" stroke-width="4"/>
+  <path d="m160 116 14 14" stroke="#909399" stroke-width="5" stroke-linecap="round"/>
+</svg>

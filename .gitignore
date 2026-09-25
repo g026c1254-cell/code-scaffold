@@ -1,0 +1,16 @@
+# 忽略 Maven 编译产物
+**/target/
+
+# 忽略 Node 前端依赖库与打包文件
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# 忽略 IDEA 的本地个人配置
+.idea/
+*.iml
+.DS_Store
+
+# 忽略日志文件
+*.log
