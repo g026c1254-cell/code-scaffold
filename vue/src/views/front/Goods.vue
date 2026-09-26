@@ -1,9 +1,9 @@
 <template>
-  <div style="margin: 10px auto;min-height: 90vh;width: 70%">
+  <div class="goods-page">
     <!--顶部+搜索框-->
-    <div style="display: flex;justify-content: space-between;align-items: center">
+    <div class="goods-toolbar">
       <div>
-        <h1 style="border-left: 5px solid #ff6700;padding-left: 7px;font-size: 22px;color:#303133;">热卖商品</h1>
+        <h1 class="page-title">热卖商品</h1>
       </div>
       <div>
         <input v-model='keyboard' type="text" placeholder="请输入搜索商品名称" class="search-input" @keyup.enter="loadGoods"/>
@@ -14,7 +14,7 @@
     </div>
 
     <!--分类按钮-->
-    <div style="margin-top: 15px">
+    <div class="category-area">
       <div class="type-group">
         <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">全部</el-button>
         <el-button type="primary" v-for="(category,index) in types" :key="index" :class="{ 'type-selected': selectedCategoryId === category.id }" @click="handleCategoryClick(category)">
@@ -24,24 +24,20 @@
     </div>
     <div>
       <el-row :gutter="20" v-if="goods.length > 0">
-        <el-col :span="6" v-for="(item,index) in goods" :key="index" style="margin-top: 10px">
+        <el-col :xs="12" :sm="8" :md="6" v-for="(item,index) in goods" :key="index" class="goods-col">
           <el-card :body-style="{ padding: '0px' }" class="card-item" @click.native="goDetail(item.id)">
-            <img :src="item.cover" alt="" style="width: 100%;height: 200px">
-            <div style="padding: 10px">
-              <div style="margin-top: 3px;font-size: 13px">
+            <img :src="item.cover" alt="" class="goods-image">
+            <div class="goods-content">
+              <div class="goods-name">
                 {{item.name}}
               </div>
-              <div style="margin-top: 5px;font-size: 11px;color: #909399;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
-                {{item.descr}}
+              <div class="goods-descr">
+                {{ stripHtml(item.content || item.descr) }}
               </div>
-              <div style="display: flex;justify-content: space-between;align-items: center;margin-top: 10px">
-                <div style="font-size: 20px;color: #FFA500;font-weight: 600">
-                  ￥{{item.price}}
-                </div>
-                <div style="font-size:11px;color: #909399;">
-                  累计热销：{{item.sales}}
-                </div>
+              <div class="goods-meta">
+                <div class="goods-price">{{item.price}}円</div>
               </div>
+              <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
             </div>
           </el-card>
         </el-col>
@@ -74,13 +70,20 @@ export default {
       total: 0,
       pageNum: 1,
       pageSize: 8,
-      keyboard: '',
+      keyboard: this.$route.query.name || '',
       goods: [],
     }
   },
   created() {
     this.loadType()
     this.loadGoods()
+  },
+  watch: {
+    '$route.query.name'(value) {
+      this.keyboard = value || ''
+      this.pageNum = 1
+      this.loadGoods()
+    }
   },
   methods:{
     goDetail(id) {
@@ -125,6 +128,11 @@ export default {
     handleCurrentChange(pageNum){
       this.pageNum = pageNum;
       this.loadGoods()
+    },
+    stripHtml(value) {
+      const container = document.createElement('div')
+      container.innerHTML = value || ''
+      return (container.textContent || container.innerText || '').replace(/\s+/g, ' ').trim()
     }
   }
 }
@@ -132,22 +140,49 @@ export default {
 
 <style scoped>
 .search-input{
-  padding: 14px 24px;
+  width: 240px;
+  padding: 12px 16px;
   outline: none;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-size: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 20px 0 0 20px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 .search-button{
-  padding: 14px 24px;
+  padding: 12px 18px;
   background: #ff6700;
   border: none;
+  border-radius: 0 20px 20px 0;
 }
 
-/* 分类标签组容器（可选，优化间距） */
+.goods-page {
+  width: min(1180px, 92%);
+  min-height: 90vh;
+  margin: 20px auto;
+}
+
+.goods-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-title {
+  border-left: 5px solid #ff6700;
+  padding-left: 10px;
+  color: #303133;
+  font-size: 22px;
+}
+
+.category-area {
+  margin-top: 20px;
+}
+
 .type-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -171,8 +206,78 @@ export default {
   color: #606266;
 }
 
+.card-item {
+  border-radius: 8px;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
 .card-item:hover{
   cursor: pointer;
-  transform: scale(1.03);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 24px rgba(48, 49, 51, .12);
+}
+
+.goods-col {
+  margin-top: 18px;
+}
+
+.goods-image {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.goods-content {
+  padding: 12px;
+}
+
+.goods-name {
+  color: #303133;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.goods-descr {
+  margin-top: 7px;
+  color: #909399;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goods-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.goods-price {
+  color: #ff6700;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.publisher-tag {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #606266;
+  background: #f4f4f5;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .goods-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-input {
+    width: calc(100% - 52px);
+  }
 }
 </style>

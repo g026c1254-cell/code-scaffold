@@ -21,7 +21,7 @@
               </div>
               <div style="display: flex;justify-content: space-between;align-items: center;margin-top: 10px">
                 <div style="font-size: 20px;color: #FFA500;font-weight: 600">
-                  ￥{{item.goods.price}}
+                  {{item.goods.price}}円
                 </div>
 
                 <div>
@@ -58,7 +58,16 @@ export default {
       })
     },
     goPage(url){
-      location.href = url
+      const target = String(url || '')
+      const queryIndex = target.indexOf('?')
+      const path = queryIndex >= 0 ? target.slice(0, queryIndex) : target
+      const query = {}
+      if (queryIndex >= 0) {
+        new URLSearchParams(target.slice(queryIndex + 1)).forEach((value, key) => {
+          query[key] = value
+        })
+      }
+      this.$router.push({ path, query })
     },
     del(row){
       this.$request.delete('/collect/delete?id=' + row.id).then(res => {
@@ -77,6 +86,12 @@ export default {
 <style scoped>
 .card-item:hover{
   cursor: pointer;
-  transform: scale(1.03);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 24px rgba(48, 49, 51, .12);
+}
+
+.card-item {
+  border-radius: 8px;
+  transition: transform .25s ease, box-shadow .25s ease;
 }
 </style>

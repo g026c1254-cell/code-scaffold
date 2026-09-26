@@ -50,6 +50,25 @@ public class UserController {
     }
 
     /**
+     * 更新当前登录用户头像
+     */
+    @PutMapping("/avatar")
+    public Result updateAvatar(@RequestBody User user) {
+        User currentUser = TokenUtils.getCurrentUser();
+        if (currentUser == null) {
+            return Result.error("401", "请先登录");
+        }
+        if (StrUtil.isBlank(user.getAvatar())) {
+            return Result.error("400", "头像地址不能为空");
+        }
+        User update = new User();
+        update.setId(currentUser.getId());
+        update.setAvatar(user.getAvatar());
+        userService.updateById(update);
+        return Result.success(update.getAvatar());
+    }
+
+    /**
      * 删除
      */
     @DeleteMapping("/delete/{id}")

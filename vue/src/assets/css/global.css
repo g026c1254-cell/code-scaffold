@@ -6,6 +6,11 @@
 
 body {
     font-size: 14px;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+}
+
+.el-notification {
+    top: 78px !important;
 }
 
 a {

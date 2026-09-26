@@ -15,7 +15,9 @@ public class InterceptorConfig extends WebMvcConfigurationSupport {
                 // 拦截所有的请求路径
                 .addPathPatterns("/**")
                 // 放行以下接口
-                .excludePathPatterns("/login", "/register", "/password", "/user/**", "/type/**", "/goods/**", "/carousel/**",
+                .excludePathPatterns("/login", "/register", "/password", "/user/**", "/type/**", "/carousel/**",
+                        "/goods/selectAll", "/goods/selectById", "/goods/selectPage",
+                        "/goods/selectPage/type", "/goods/times",
                         "/notice/selectAll", "/notice/selectById");
         super.addInterceptors(registry);
     }

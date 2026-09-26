@@ -27,6 +27,7 @@ CREATE TABLE `notice` (
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '公告内容',
   `time` varchar(50) NULL COMMENT '发布时间',
   `user_id` int(11) NULL COMMENT '发布人ID',
+  `user_name` varchar(255) NULL COMMENT '发布人姓名',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '公告表';
 

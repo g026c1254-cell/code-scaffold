@@ -1,0 +1,59 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: code-scaffold-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bili_mall
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./springboot
+    container_name: code-scaffold-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/bili_mall?useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2B8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      APP_HOST: localhost
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./files:/app/files
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./vue
+    container_name: code-scaffold-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

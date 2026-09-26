@@ -37,6 +37,10 @@ public class JwtInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        // 跨域预检请求不携带业务 Token，交由 CORS 配置处理。
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         // 1. 从请求头或URL参数中获取token
         String token = request.getHeader("token");  // 优先从请求头获取token
         if (StrUtil.isBlank(token)) {

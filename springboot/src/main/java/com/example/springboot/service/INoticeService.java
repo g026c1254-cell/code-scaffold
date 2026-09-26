@@ -23,6 +23,11 @@ public interface INoticeService {
     void remove(Integer id);
 
     /**
+     * 查询当前用户发布的公告
+     */
+    List<Notice> myNotices();
+
+    /**
      * 查询全部数据
      */
     List<Notice> selectAll();

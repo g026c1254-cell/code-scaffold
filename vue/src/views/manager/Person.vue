@@ -14,43 +14,43 @@
             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
           </el-upload>
         </div>
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="user.username" placeholder="用户名" disabled></el-input>
+        <el-form-item label="ユーザー名" prop="username">
+          <el-input v-model="user.username" placeholder="ユーザー名" disabled></el-input>
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="user.name" placeholder="姓名"></el-input>
+        <el-form-item label="氏名" prop="name">
+          <el-input v-model="user.name" placeholder="氏名"></el-input>
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="user.phone" placeholder="电话"></el-input>
+        <el-form-item label="電話番号" prop="phone">
+          <el-input v-model="user.phone" placeholder="電話番号"></el-input>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="user.email" placeholder="邮箱"></el-input>
+        <el-form-item label="メールアドレス" prop="email">
+          <el-input v-model="user.email" placeholder="メールアドレス"></el-input>
         </el-form-item>
-        <el-form-item label="地址" prop="address">
-          <el-input type="textarea" v-model="user.address" placeholder="地址"></el-input>
+        <el-form-item label="住所" prop="address">
+          <el-input type="textarea" v-model="user.address" placeholder="住所"></el-input>
         </el-form-item>
-        <el-form-item label="性别" prop="sex">
-          <el-radio v-model="user.sex" label="男">男</el-radio>
-          <el-radio v-model="user.sex" label="女">女</el-radio>
+        <el-form-item label="性別" prop="sex">
+          <el-radio v-model="user.sex" label="男">男性</el-radio>
+          <el-radio v-model="user.sex" label="女">女性</el-radio>
         </el-form-item>
-        <el-form-item label="年龄" prop="age">
-          <el-input v-model="user.age" placeholder="年龄"></el-input>
+        <el-form-item label="年齢" prop="age">
+          <el-input v-model="user.age" placeholder="年齢"></el-input>
         </el-form-item>
-        <el-form-item label="个人介绍" prop="infos">
-          <el-input type="textarea" v-model="user.infos" placeholder="个人介绍"></el-input>
+        <el-form-item label="自己紹介" prop="infos">
+          <el-input type="textarea" v-model="user.infos" placeholder="自己紹介"></el-input>
         </el-form-item>
         <div style="text-align: center; margin-bottom: 20px">
-          <el-button type="primary" @click="update">保 存</el-button>
-          <el-button type="success" @click="formDetailVisible = true">修改密码</el-button>
+          <el-button type="primary" @click="update">保存</el-button>
+          <el-button type="success" @click="formDetailVisible = true">パスワード変更</el-button>
         </div>
       </el-form>
     </el-card>
 
-    <el-drawer :visible.sync="formDetailVisible" title="修改密码" :with-header="false">
+    <el-drawer :visible.sync="formDetailVisible" title="パスワード変更" :with-header="false">
       <div class="drawer-header">
-        <span class="drawer-title">详情</span>
+        <span class="drawer-title">パスワード変更</span>
         <div class="drawer-actions">
-          <el-tooltip placement="top" :content="isFullscreen ? '退出全屏' : '全屏'">
+          <el-tooltip placement="top" :content="isFullscreen ? '全画面を終了' : '全画面'">
             <el-button icon="el-icon-full-screen" size="mini" circle @click="toggleFullscreen"/>
           </el-tooltip>
           <el-button icon="el-icon-close" size="mini" circle @click="formDetailVisible = false"/>
@@ -59,24 +59,24 @@
 
       <div class="drawer-content" ref="drawerContent">
         <el-form ref="formRef" :model="user" :rules="rules" label-width="80px" style="padding-right: 20px">
-          <el-form-item label="用户名" prop="username">
-            <el-input  v-model="user.username" placeholder="用户名" disabled></el-input>
+          <el-form-item label="ユーザー名" prop="username">
+            <el-input  v-model="user.username" placeholder="ユーザー名" disabled></el-input>
           </el-form-item>
-          <el-form-item label="原始密码" prop="password">
-            <el-input show-password v-model="user.password" placeholder="原始密码"></el-input>
+          <el-form-item label="現在のパスワード" prop="password">
+            <el-input show-password v-model="user.password" placeholder="現在のパスワード"></el-input>
           </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input show-password v-model="user.newPassword" placeholder="新密码"></el-input>
+          <el-form-item label="新しいパスワード" prop="newPassword">
+            <el-input show-password v-model="user.newPassword" placeholder="新しいパスワード"></el-input>
           </el-form-item>
-          <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input show-password v-model="user.confirmPassword" placeholder="确认密码"></el-input>
+          <el-form-item label="パスワード確認" prop="confirmPassword">
+            <el-input show-password v-model="user.confirmPassword" placeholder="パスワード確認"></el-input>
           </el-form-item>
         </el-form>
       </div>
 
       <div class="drawer-footer">
-        <el-button type="primary" @click="updatePassword">确认修改</el-button>
-        <el-button @click="formDetailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="updatePassword">変更を確定</el-button>
+        <el-button @click="formDetailVisible = false">閉じる</el-button>
       </div>
     </el-drawer>
   </div>
@@ -88,22 +88,22 @@ export default {
   data() {
     const validateConfirmPassword = (rule, value, callback) => {
       if (!value) {
-        callback(new Error('请输入确认密码'));
+        callback(new Error('確認用パスワードを入力してください'));
       } else if (value !== this.user.newPassword) {
-        callback(new Error('两次输入的密码不一致'));
+        callback(new Error('パスワードが一致しません'));
       } else {
         callback();
       }
     };
     const validateNewPassword = (rule, value, callback) => {
       if (!value) {
-        callback(new Error('请输入新密码'));
+        callback(new Error('新しいパスワードを入力してください'));
       } else if (value.length < 8) {
-        callback(new Error('密码长度不能少于8位'));
+        callback(new Error('パスワードは8文字以上で入力してください'));
       } else if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-        callback(new Error('密码必须包含字母和数字'));
+        callback(new Error('パスワードには英字と数字を含めてください'));
       } else if (value === this.user.password) {
-        callback(new Error('新密码不能与原始密码相同'));
+        callback(new Error('新しいパスワードは現在のパスワードと異なるものにしてください'));
       } else {
         callback();
       }
@@ -112,7 +112,7 @@ export default {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       rules: {
         password: [
-          { required: true, message: '请输入原始密码', trigger: 'blur' }
+          { required: true, message: '現在のパスワードを入力してください', trigger: 'blur' }
         ],
         newPassword: [
           { validator: validateNewPassword, required: true, trigger: 'blur' }
@@ -134,10 +134,10 @@ export default {
         if (valid) {
           this.$request.post('/user/password', this.user).then(res => {
             if (res.code === '200') {
-              this.$notify.success({title: '成功', message: '保存成功', showClose: false, duration: 2000});
+              this.$notify.success({title: '完了', message: '保存しました', showClose: false, duration: 2000});
               this.$router.push('/login')
             } else {
-              this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+              this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
             }
           })
         }
@@ -146,12 +146,12 @@ export default {
     update() {
       this.$request.put('/user/update', this.user).then(res => {
         if (res.code === '200') {
-          this.$notify.success({title: '成功', message: '保存成功', showClose: false, duration: 2000});
+          this.$notify.success({title: '完了', message: '保存しました', showClose: false, duration: 2000});
           localStorage.setItem('user', JSON.stringify(this.user))
           // 触发父级的数据更新
           this.$emit('update:user', this.user)
         } else {
-          this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+          this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
         }
       })
     },

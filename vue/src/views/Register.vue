@@ -39,6 +39,8 @@
 </template>
 
 <script>
+import { createPixelAvatarId } from '@/utils/pixelAvatar'
+
 export default {
   name: 'Login',
   data() {
@@ -77,7 +79,10 @@ export default {
     register() {
       this.$refs['registerRef'].validate((valid) => {
         if (valid) {
-          this.$request.post('/register', this.user).then(res => {
+          const user = Object.assign({}, this.user, {
+            avatar: createPixelAvatarId()
+          })
+          this.$request.post('/register', user).then(res => {
             if (res.code === '200') {
               this.$router.push('/login')
               this.$notify.success({title: '成功', message: '注册成功', showClose: false, duration: 2000});

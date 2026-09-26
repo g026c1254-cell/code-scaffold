@@ -3,10 +3,10 @@
     <!--顶部+搜索框-->
     <div style="display: flex;justify-content: space-between;align-items: center">
       <div>
-        <h1 style="border-left: 5px solid #ff6700;padding-left: 7px;font-size: 22px;color:#303133;">热卖商品</h1>
+        <h1 style="border-left: 5px solid #ff6700;padding-left: 7px;font-size: 22px;color:#303133;">人気商品</h1>
       </div>
       <div>
-        <input v-model='keyboard' type="text" placeholder="请输入搜索商品名称" class="search-input" @keyup.enter="loadGoods"/>
+        <input v-model='keyboard' type="text" placeholder="商品名を検索" class="search-input" @keyup.enter="loadGoods"/>
         <el-button class="search-button" @click="loadGoods">
           <i class="search-icon">🔍</i>
         </el-button>
@@ -16,7 +16,7 @@
     <!--分类按钮-->
     <div style="margin-top: 15px">
       <div class="type-group">
-        <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">全部</el-button>
+        <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">すべて</el-button>
         <el-button type="primary" v-for="(category,index) in types" :key="index" :class="{ 'type-selected': selectedCategoryId === category.id }" @click="handleCategoryClick(category)">
           {{ category.name }}
         </el-button>
@@ -36,12 +36,20 @@
               </div>
               <div style="display: flex;justify-content: space-between;align-items: center;margin-top: 10px">
                 <div style="font-size: 20px;color: #FFA500;font-weight: 600">
-                  ￥{{item.price}}
-                </div>
-                <div style="font-size:11px;color: #909399;">
-                  累计热销：{{item.sales}}
+                  {{item.price}}円
                 </div>
               </div>
+              <div style="margin-top: 8px;color: #909399;font-size: 12px;">
+                投稿者：{{ item.userName || '匿名ユーザー' }}
+              </div>
+              <el-button
+                  type="danger"
+                  plain
+                  size="mini"
+                  class="delete-button"
+                  @click.stop="deleteGoods(item.id)">
+                商品を削除
+              </el-button>
             </div>
           </el-card>
         </el-col>
@@ -60,7 +68,7 @@
     </div>
 
     <div v-if="goods.length == 0">
-      <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="没有商品哟~"></el-empty>    </div>
+    <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="商品がありません"></el-empty>    </div>
     </div>
 </template>
 
@@ -119,6 +127,30 @@ export default {
     handleCurrentChange(pageNum){
       this.pageNum = pageNum;
       this.loadGoods()
+    },
+    deleteGoods(id) {
+      this.$confirm('この商品を削除してもよろしいですか？', '削除確認', {
+        type: 'warning'
+      }).then(() => {
+        this.$request.delete('/goods/delete?id=' + id).then(res => {
+          if (res.code === '200') {
+            this.$notify.success({
+              title: '完了',
+              message: '商品を削除しました',
+              showClose: false,
+              duration: 2000
+            })
+            this.loadGoods()
+          } else {
+            this.$notify.error({
+              title: 'エラー',
+              message: res.msg,
+              showClose: false,
+              duration: 2000
+            })
+          }
+        })
+      }).catch(() => {})
     }
   }
 }
@@ -168,5 +200,9 @@ export default {
 .card-item:hover{
   cursor: pointer;
   transform: scale(1.03);
+}
+
+.delete-button {
+  margin-top: 10px;
 }
 </style>

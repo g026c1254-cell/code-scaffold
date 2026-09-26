@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.NoticeMapper">
+    <resultMap id="NoticeResultMap" type="com.example.springboot.entity.Notice">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="content" column="content"/>
+        <result property="time" column="time"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+    </resultMap>
+
+    <sql id="NoticeColumns">
+        n.id,
+        n.name,
+        n.content,
+        n.time,
+        n.user_id,
+        COALESCE(NULLIF(n.user_name, ''), u.name, u.username) AS user_name
+    </sql>
+
+    <select id="selectAllWithPublisher" resultMap="NoticeResultMap">
+        SELECT
+        <include refid="NoticeColumns"/>
+        FROM notice n
+        LEFT JOIN user u ON u.id = n.user_id
+        ORDER BY n.id DESC
+    </select>
+
+    <select id="selectPageWithPublisher" resultMap="NoticeResultMap">
+        SELECT
+        <include refid="NoticeColumns"/>
+        FROM notice n
+        LEFT JOIN user u ON u.id = n.user_id
+        <where>
+            <if test="name != null and name != ''">
+                n.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY n.id DESC
+    </select>
+</mapper>

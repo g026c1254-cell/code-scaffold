@@ -18,6 +18,8 @@ public class GoodsController {
      */
     @PostMapping("/add")
     public Result add(@RequestBody Goods goods) {
+        // 创建者归属由服务端根据 token 写入，不能由客户端指定。
+        goods.setUserId(null);
         goodsService.save(goods);
         return Result.success();
     }
@@ -73,13 +75,6 @@ public class GoodsController {
         return Result.success(goodsService.times());
     }
 
-    /**
-     * 热销商品
-     */
-    @GetMapping("/sales")
-    public Result sales() {
-        return Result.success(goodsService.sales());
-    }
     @GetMapping("/selectPage/type")
     public Result selectPageType(@RequestParam(defaultValue = "") String name,
                                  @RequestParam Integer typeId,
@@ -87,11 +82,9 @@ public class GoodsController {
                                  @RequestParam Integer pageSize) {
         return Result.success(goodsService.selectPageType(pageNum, pageSize, name,typeId));
     }
-    /**
-     * echarts商品销量统计分析
-     */
-    @GetMapping("/echarts")
-    public Result echarts(){
-        return Result.success(goodsService.echarts());
+
+    @GetMapping("/myGoods")
+    public Result myGoods() {
+        return Result.success(goodsService.myGoods());
     }
 }

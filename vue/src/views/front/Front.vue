@@ -1,49 +1,69 @@
 <template>
-  <div>
+  <div class="front-layout">
     <div class="header">
       <div class="front-header">
-        <a href="/front/home">
+        <a href="/front/home" @click.prevent="$router.push('/front/home')">
           <div class="front-header-left">
-            <img src="@/assets/logo.svg" alt="">
-            <div class="title">电商平台</div>
+            <img src="@/assets/logo.svg" alt="桑都安">
+            <div class="brand-copy">
+              <div class="title">桑都安 <span>- SOUTOYASU -</span></div>
+              <div class="brand-subtitle">八王子学生リユース</div>
+            </div>
           </div>
         </a>
 
         <div class="front-header-center">
-          <div @click="goPage(item.path)" class="menu-item" v-for="item in menuList" :key="item.text" :class="{'menu-item-active' : item.path === $route.path }">{{ item.text }}</div>
+          <div @click="goPage(item.path)" class="menu-item" v-for="item in menuList" :key="item.key" :class="{'menu-item-active' : item.path === $route.path }">{{ $t('nav.' + item.key) }}</div>
         </div>
+
+        <form class="header-search" @submit.prevent="searchGoods">
+          <el-input
+              v-model="searchKeyword"
+              class="header-search-input"
+              clearable
+              prefix-icon="el-icon-search"
+              :placeholder="$t('common.searchProducts')">
+          </el-input>
+        </form>
 
         <div class="front-header-right">
           <div v-if="!user.username" class="front-header-right-button">
-            <el-button type="primary" plain @click="$router.push('/login')">登录</el-button>
-            <el-button type="success" plain @click="$router.push('/register')">注册</el-button>
+            <el-button type="primary" plain @click="$router.push('/login')">{{ $t('nav.login') }}</el-button>
+            <el-button type="success" plain @click="$router.push('/register')">{{ $t('nav.register') }}</el-button>
           </div>
           <!-- 登录展示 -->
-          <div v-else>
-            <el-dropdown>
-              <div class="front-header-dropdown">
-                <img :src="user.avatar" alt="">
+          <div v-else class="front-user-area">
+            <el-dropdown class="profile-dropdown">
+              <div class="front-header-dropdown profile-trigger" tabindex="0">
+                <img :src="getAvatarUrl(user.avatar)" alt=""><i class="el-icon-arrow-down"></i>
               </div>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item>
                   <div style="color: #333">{{user.name}}</div>
                 </el-dropdown-item>
                 <el-dropdown-item>
-                  <a style="color: #333" href="/front/person"><div>个人信息</div></a>
+                  <div style="color: #333" @click="$router.push('/front/profile')">{{ $t('common.personalInfo') }}</div>
                 </el-dropdown-item>
                 <el-dropdown-item>
-                  <div @click="$router.push('/front/collect')">我的收藏</div>
+                  <div @click="$router.push('/front/collect')">{{ $t('common.collection') }}</div>
                 </el-dropdown-item>
                 <el-dropdown-item>
-                  <div @click="$router.push('/front/orders')">我的订单</div>
+                  <div @click="$router.push('/front/orders')">{{ $t('common.orders') }}</div>
                 </el-dropdown-item>
                 <el-dropdown-item>
-                  <div @click="logout">退出</div>
+                  <div @click="logout">{{ $t('nav.logout') }}</div>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
         </div>
+        <el-dropdown class="language-dropdown" @command="changeLocale">
+          <el-button class="language-trigger" plain>{{ localeLabel }}<i class="el-icon-arrow-down"></i></el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="zh-CN">🇨🇳 {{ $t('language.chinese') }}</el-dropdown-item>
+            <el-dropdown-item command="ja-JP">🇯🇵 {{ $t('language.japanese') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </div>
     </div>
 
@@ -58,6 +78,7 @@
 <script>
 
 import Footer from "@/conponents/Footer.vue";
+import { createPixelAvatar, createPixelAvatarId } from '@/utils/pixelAvatar'
 
 export default {
   name: "FrontLayout",
@@ -65,28 +86,61 @@ export default {
   data () {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+      locale: this.$i18n.locale,
+      searchKeyword: '',
       menuList: [
-        {text: "首页", path: '/front/home'},
-        {text: "全部商品", path: '/front/goods'},
-        {text: "个人中心", path: '/front/person'},
+        {key: "home", path: '/front/home'},
+        {key: "goods", path: '/front/goods'},
+        {key: "person", path: '/front/person'},
       ],
     }
   },
   created() {
+    if (this.user.username && !this.user.avatar) {
+      this.user.avatar = createPixelAvatarId(this.user.id)
+      localStorage.setItem('user', JSON.stringify(this.user))
+      this.$request.put('/user/avatar', { avatar: this.user.avatar }).catch(() => {})
+    }
     if(typeof this.user.username === 'undefined'){
-      this.menuList = this.menuList.filter(item => (item.text == "首页"));
+      this.menuList = this.menuList.filter(item => item.key === "home");
     }
   },
   methods: {
+    getAvatarUrl(avatar) {
+      if (!avatar) return require('@/assets/empty.svg')
+      if (String(avatar).indexOf('pixel:') === 0) {
+        return createPixelAvatar(String(avatar).slice(6))
+      }
+      return avatar
+    },
     goPage(path) {
-      location.href = path;
+      if (this.$route.path !== path) {
+        this.$router.push(path)
+      }
     },
     updateUser() {
       this.user = JSON.parse(localStorage.getItem('user') || '{}')   // 重新获取下用户的最新信息
     },
     logout() {
       localStorage.removeItem("user");
-      location.href = '/front/home'
+      this.$router.push('/front/home')
+    },
+    changeLocale(locale) {
+      this.$i18n.locale = locale
+      localStorage.setItem('locale', locale)
+      this.locale = locale
+    },
+    searchGoods() {
+      const keyword = this.searchKeyword.trim()
+      this.$router.push({
+        path: '/front/goods',
+        query: keyword ? { name: keyword } : {}
+      })
+    }
+  },
+  computed: {
+    localeLabel() {
+      return this.locale === 'ja-JP' ? '日本語' : '中文'
     }
   }
 }

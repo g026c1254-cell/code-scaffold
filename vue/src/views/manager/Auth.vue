@@ -1,6 +1,6 @@
 <template>
     <div style="display: flex;align-items: center; justify-content: center">
-      <el-empty :image-size="300" description="您没有权限访问该页面~"></el-empty>
+      <el-empty :image-size="300" description="このページにアクセスする権限がありません"></el-empty>
     </div>
 </template>
 

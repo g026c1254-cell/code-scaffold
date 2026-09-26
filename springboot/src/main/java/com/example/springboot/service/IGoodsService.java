@@ -1,6 +1,5 @@
 package com.example.springboot.service;
 
-import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.springboot.entity.Goods;
 
@@ -42,10 +41,10 @@ public interface IGoodsService {
      */
     List<Goods> times();
 
-    /**
-     * 热销商品
-     */
-    List<Goods> sales();
     IPage<Goods> selectPageType(Integer pageNum, Integer pageSize, String name, Integer typeId);
-    List<JSONObject> echarts();
+
+    /**
+     * 查询当前用户发布的商品
+     */
+    List<Goods> myGoods();
 }

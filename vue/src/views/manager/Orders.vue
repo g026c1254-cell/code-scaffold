@@ -3,42 +3,42 @@
     <!-- 表格内容 -->
     <el-card>
       <div style="margin-bottom: 10px">
-        <el-input style="width: 200px; margin: 0 5px" placeholder="查询商品名称" v-model="name"></el-input>
-        <el-input style="width: 200px; margin: 0 5px" placeholder="查询订单号" v-model="orderNo"></el-input>
-        <el-button type="success" plain @click="load(1)">查询</el-button>
-        <el-button type="info" plain @click="reset">重置</el-button>
+        <el-input style="width: 200px; margin: 0 5px" placeholder="商品名を検索" v-model="name"></el-input>
+        <el-input style="width: 200px; margin: 0 5px" placeholder="注文番号を検索" v-model="orderNo"></el-input>
+        <el-button type="success" plain @click="load(1)">検索</el-button>
+        <el-button type="info" plain @click="reset">リセット</el-button>
       </div>
       <el-table :data="tableData" stripe>
-        <el-table-column prop="name" label="商品名称" :show-overflow-tooltip="true" width="200">
+        <el-table-column prop="name" label="商品名" :show-overflow-tooltip="true" width="200">
           <template v-slot="scope">
             <el-link :href="'/front/goodsDetail?id=' + scope.row.goodsId" :underline="false">{{scope.row.name}}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="商品封面" :show-overflow-tooltip="true">
+        <el-table-column prop="name" label="商品画像" :show-overflow-tooltip="true">
           <template v-slot="scope">
             <el-image v-if="scope.row.goods.cover" style="width: 50px; height: 50px" :src="scope.row.goods.cover" fit="cover" :preview-src-list="[scope.row.goods.cover]"></el-image>
           </template>
         </el-table-column>
-        <el-table-column prop="orderNo" label="订单号" :show-overflow-tooltip="true" width="150">
+        <el-table-column prop="orderNo" label="注文番号" :show-overflow-tooltip="true" width="150">
         </el-table-column>
-        <el-table-column prop="price" label="总价" width="50"></el-table-column>
+        <el-table-column prop="price" label="合計金額" width="50"></el-table-column>
         <el-table-column prop="nums" label="数量" width="50"></el-table-column>
-        <el-table-column prop="userName" label="姓名"></el-table-column>
-        <el-table-column prop="userPhone" label="联系方式" :show-overflow-tooltip="true"></el-table-column>
-        <el-table-column prop="userAddress" label="地址" :show-overflow-tooltip="true"></el-table-column>
-        <el-table-column prop="time" label="购买时间" :show-overflow-tooltip="true"></el-table-column>
-        <el-table-column label="订单状态">
+        <el-table-column prop="userName" label="氏名"></el-table-column>
+        <el-table-column prop="userPhone" label="連絡先" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="userAddress" label="住所" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="time" label="購入日時" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column label="注文ステータス">
           <template v-slot="scope">
             <el-tag :type="scope.row.state === '已支付' ? 'success' : 'warning'">
-              {{ scope.row.state === '已支付' ? '已支付' : '待付款' }}
+              {{ scope.row.state === '已支付' ? '支払い済み' : '未払い' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="user.name" label="用户" width="50"></el-table-column>
+        <el-table-column prop="user.name" label="ユーザー" width="50"></el-table-column>
         <el-table-column label="操作" align="center" width="240">
           <template v-slot="scope">
-            <el-button size="mini" type="success" plain @click="detail(scope.row)">详情</el-button>
-            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">删除</el-button>
+            <el-button size="mini" type="success" plain @click="detail(scope.row)">詳細</el-button>
+            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">削除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -58,11 +58,11 @@
     </el-card>
 
     <!-- 详情内容 -->
-    <el-drawer :visible.sync="formDetailVisible" title="详情" :with-header="false">
+    <el-drawer :visible.sync="formDetailVisible" title="詳細" :with-header="false">
       <div class="drawer-header">
-        <span class="drawer-title">详情</span>
+        <span class="drawer-title">詳細</span>
         <div class="drawer-actions">
-          <el-tooltip placement="top" :content="isFullscreen ? '退出全屏' : '全屏'">
+          <el-tooltip placement="top" :content="isFullscreen ? '全画面を終了' : '全画面'">
             <el-button icon="el-icon-full-screen" size="mini" circle @click="toggleFullscreen"/>
           </el-tooltip>
           <el-button icon="el-icon-close" size="mini" circle @click="formDetailVisible = false"/>
@@ -72,41 +72,41 @@
       <!-- 抽屉内容 -->
       <div class="drawer-content" ref="drawerContent">
         <el-form label-width="100px" style="padding-right: 40px" :model="form">
-          <el-form-item label="商品名称" prop="name">
+          <el-form-item label="商品名" prop="name">
             <div>{{form.name}}</div>
           </el-form-item>
-          <el-form-item label="商品封面" >
+          <el-form-item label="商品画像" >
             <div>
               <el-image v-if="form.goods?.cover" style="width: 50px; height: 50px" :src="form.goods?.cover" fit="cover" :preview-src-list="[form.goods?.cover]"></el-image>
             </div>
           </el-form-item>
-          <el-form-item label="订单号" prop="name">
+          <el-form-item label="注文番号" prop="name">
             <div>{{form.orderNo}}</div>
           </el-form-item>
-          <el-form-item label="总价" prop="name">
+          <el-form-item label="合計金額" prop="name">
             <div>{{form.price}}</div>
           </el-form-item>
           <el-form-item label="数量" prop="name">
             <div>{{form.nums}}</div>
           </el-form-item>
-          <el-form-item label="姓名" prop="name">
+          <el-form-item label="氏名" prop="name">
             <div>{{form.userName}}</div>
           </el-form-item>
-          <el-form-item label="联系方式" prop="name">
+          <el-form-item label="連絡先" prop="name">
             <div>{{form.userPhone}}</div>
           </el-form-item>
-          <el-form-item label="地址" prop="name">
+          <el-form-item label="住所" prop="name">
             <div>{{form.userAddress}}</div>
           </el-form-item>
-          <el-form-item label="购买时间" prop="name">
+          <el-form-item label="購入日時" prop="name">
             <div>{{form.time}}</div>
           </el-form-item>
-          <el-form-item label="订单状态" prop="name">
+          <el-form-item label="注文ステータス" prop="name">
             <el-tag :type="form.state === '已支付' ? 'success' : 'warning'">
-              {{ form.state === '已支付' ? '已支付' : '待付款' }}
+              {{ form.state === '已支付' ? '支払い済み' : '未払い' }}
             </el-tag>
           </el-form-item>
-          <el-form-item label="用户" >
+          <el-form-item label="ユーザー" >
             <div>{{form.user?.name}}</div>
           </el-form-item>
         </el-form>
@@ -114,7 +114,7 @@
 
       <!-- 抽屉底部 -->
       <div class="drawer-footer">
-        <el-button @click="formDetailVisible = false">关闭</el-button>
+        <el-button @click="formDetailVisible = false">閉じる</el-button>
       </div>
     </el-drawer>
   </div>
@@ -137,7 +137,7 @@ export default {
       user: JSON.parse(localStorage.getItem('user') || '{}'),
       rules: {
         username: [
-          {required: true, message: '请输入分类名称', trigger: 'blur'},
+          {required: true, message: 'カテゴリ名を入力してください', trigger: 'blur'},
         ]
       },
       isFullscreen: false,
@@ -168,13 +168,13 @@ export default {
       this.formDetailVisible = true
     },
     del(id) {
-      this.$confirm('您确认删除吗？', '确认删除', {type: "warning"}).then(response => {
+      this.$confirm('削除してもよろしいですか？', '削除確認', {type: "warning"}).then(response => {
         this.$request.delete('/orders/delete?id=' + id).then(res => {
           if (res.code === '200') {
-            this.$notify.success({title: '成功', message: '操作成功', showClose: false, duration: 2000});
+            this.$notify.success({title: '完了', message: '操作が完了しました', showClose: false, duration: 2000});
             this.load(1)
           } else {
-            this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+            this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
           }
         })
       }).catch(() => {

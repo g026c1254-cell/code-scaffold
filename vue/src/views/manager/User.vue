@@ -3,27 +3,27 @@
     <!-- 表格内容 -->
     <el-card>
       <div style="margin-bottom: 10px">
-        <el-input style="width: 200px" placeholder="查询用户名" v-model="username"></el-input>
-        <el-input style="width: 200px; margin: 0 5px" placeholder="查询姓名" v-model="name"></el-input>
-        <el-button type="success" plain @click="load(1)">查询</el-button>
-        <el-button type="info" plain @click="reset">重置</el-button>
-        <el-button type="primary" plain @click="handleAdd">新增</el-button>
+        <el-input style="width: 200px" placeholder="ユーザー名を検索" v-model="username"></el-input>
+        <el-input style="width: 200px; margin: 0 5px" placeholder="氏名を検索" v-model="name"></el-input>
+        <el-button type="success" plain @click="load(1)">検索</el-button>
+        <el-button type="info" plain @click="reset">リセット</el-button>
+        <el-button type="primary" plain @click="handleAdd">追加</el-button>
       </div>
       <el-table :data="tableData" stripe>
-        <el-table-column prop="id" label="序号" width="70" align="center">
+        <el-table-column prop="id" label="番号" width="70" align="center">
           <template slot-scope='scope'>
             <span>{{ (pageNum - 1) * pageSize + (scope.$index + 1) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="username" label="用户名"></el-table-column>
-        <el-table-column prop="name" label="姓名"></el-table-column>
-        <el-table-column prop="phone" label="手机号"></el-table-column>
-        <el-table-column prop="email" label="邮箱"></el-table-column>
-        <el-table-column prop="address" label="地址"></el-table-column>
-        <el-table-column prop="sex" label="性别"></el-table-column>
-        <el-table-column prop="age" label="年龄"></el-table-column>
-        <el-table-column prop="infos" label="个人介绍"></el-table-column>
-        <el-table-column label="头像">
+        <el-table-column prop="username" label="ユーザー名"></el-table-column>
+        <el-table-column prop="name" label="氏名"></el-table-column>
+        <el-table-column prop="phone" label="電話番号"></el-table-column>
+        <el-table-column prop="email" label="メールアドレス"></el-table-column>
+        <el-table-column prop="address" label="住所"></el-table-column>
+        <el-table-column prop="sex" label="性別"></el-table-column>
+        <el-table-column prop="age" label="年齢"></el-table-column>
+        <el-table-column prop="infos" label="自己紹介"></el-table-column>
+        <el-table-column label="アイコン">
           <template v-slot="scope">
             <div style="display: flex; align-items: center">
               <el-image style="width: 50px; height: 50px; border-radius: 50%" v-if="scope.row.avatar"
@@ -33,9 +33,9 @@
         </el-table-column>
         <el-table-column label="操作" align="center" width="240">
           <template v-slot="scope">
-            <el-button size="mini" type="success" plain @click="detail(scope.row)">详情</el-button>
-            <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">删除</el-button>
+            <el-button size="mini" type="success" plain @click="detail(scope.row)">詳細</el-button>
+            <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)">編集</el-button>
+            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">削除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -55,24 +55,24 @@
     </el-card>
 
     <!-- 新增 | 编辑弹框 -->
-    <el-dialog title="信息" :visible.sync="fromVisible" width="30%">
+    <el-dialog title="情報" :visible.sync="fromVisible" width="30%">
       <el-form :model="form" label-width="80px" style="padding-right: 20px" :rules="rules" ref="formRef">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="用户名"></el-input>
+        <el-form-item label="ユーザー名" prop="username">
+          <el-input v-model="form.username" placeholder="ユーザー名"></el-input>
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" placeholder="姓名"></el-input>
+        <el-form-item label="氏名" prop="name">
+          <el-input v-model="form.name" placeholder="氏名"></el-input>
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="form.phone" placeholder="电话"></el-input>
+        <el-form-item label="電話番号" prop="phone">
+          <el-input v-model="form.phone" placeholder="電話番号"></el-input>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="邮箱"></el-input>
+        <el-form-item label="メールアドレス" prop="email">
+          <el-input v-model="form.email" placeholder="メールアドレス"></el-input>
         </el-form-item>
-        <el-form-item label="地址" prop="address">
-          <el-input type="textarea" v-model="form.address" placeholder="地址"></el-input>
+        <el-form-item label="住所" prop="address">
+          <el-input type="textarea" v-model="form.address" placeholder="住所"></el-input>
         </el-form-item>
-        <el-form-item label="头像">
+        <el-form-item label="アイコン">
           <el-upload
               class="avatar-uploader"
               :action="$baseUrl + '/file/upload'"
@@ -80,34 +80,34 @@
               :file-list="form.avatar? [form.avatar] : []"
               list-type="picture"
               :on-success="handleAvatarSuccess">
-            <el-button type="primary">上传头像</el-button>
+            <el-button type="primary">アイコンをアップロード</el-button>
           </el-upload>
         </el-form-item>
 
-        <el-form-item label="性别" prop="sex">
-          <el-radio v-model="form.sex" label="男">男</el-radio>
-          <el-radio v-model="form.sex" label="女">女</el-radio>
+        <el-form-item label="性別" prop="sex">
+          <el-radio v-model="form.sex" label="男">男性</el-radio>
+          <el-radio v-model="form.sex" label="女">女性</el-radio>
         </el-form-item>
-        <el-form-item label="年龄" prop="age">
-          <el-input v-model="form.age" placeholder="年龄"></el-input>
+        <el-form-item label="年齢" prop="age">
+          <el-input v-model="form.age" placeholder="年齢"></el-input>
         </el-form-item>
-        <el-form-item label="个人介绍" prop="infos">
-          <el-input type="textarea" v-model="form.infos" placeholder="个人介绍"></el-input>
+        <el-form-item label="自己紹介" prop="infos">
+          <el-input type="textarea" v-model="form.infos" placeholder="自己紹介"></el-input>
         </el-form-item>
       </el-form>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="fromVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="fromVisible = false">キャンセル</el-button>
+        <el-button type="primary" @click="save">確定</el-button>
       </div>
     </el-dialog>
 
     <!-- 详情内容 -->
-    <el-drawer :visible.sync="formDetailVisible" title="详情" :with-header="false">
+    <el-drawer :visible.sync="formDetailVisible" title="詳細" :with-header="false">
       <div class="drawer-header">
-        <span class="drawer-title">详情</span>
+        <span class="drawer-title">詳細</span>
         <div class="drawer-actions">
-          <el-tooltip placement="top" :content="isFullscreen ? '退出全屏' : '全屏'">
+          <el-tooltip placement="top" :content="isFullscreen ? '全画面を終了' : '全画面'">
             <el-button icon="el-icon-full-screen" size="mini" circle @click="toggleFullscreen"/>
           </el-tooltip>
           <el-button icon="el-icon-close" size="mini" circle @click="formDetailVisible = false"/>
@@ -117,33 +117,33 @@
       <!-- 抽屉内容 -->
       <div class="drawer-content" ref="drawerContent">
         <el-form label-width="100px" style="padding-right: 40px" :model="form">
-          <el-form-item label="用户名" prop="username">
+          <el-form-item label="ユーザー名" prop="username">
             <div>{{form.username}}</div>
           </el-form-item>
-          <el-form-item label="姓名" prop="name">
+          <el-form-item label="氏名" prop="name">
             <div>{{form.name}}</div>
           </el-form-item>
-          <el-form-item label="电话" prop="phone">
+          <el-form-item label="電話番号" prop="phone">
             <div>{{form.phone}}</div>
           </el-form-item>
-          <el-form-item label="邮箱" prop="email">
+          <el-form-item label="メールアドレス" prop="email">
             <div>{{form.email}}</div>
           </el-form-item>
-          <el-form-item label="地址" prop="address">
+          <el-form-item label="住所" prop="address">
             <div>{{form.address}}</div>
           </el-form-item>
-          <el-form-item label="头像" prop="avatar">
+          <el-form-item label="アイコン" prop="avatar">
             <div>
               <img v-if="user.avatar" :src="user.avatar" class="avatar" />
             </div>
           </el-form-item>
-          <el-form-item label="性别" prop="sex">
+          <el-form-item label="性別" prop="sex">
             <div>{{form.sex}}</div>
           </el-form-item>
-          <el-form-item label="年龄" prop="age">
+          <el-form-item label="年齢" prop="age">
             <div>{{form.age}}</div>
           </el-form-item>
-          <el-form-item label="个人介绍" prop="infos">
+          <el-form-item label="自己紹介" prop="infos">
             <div>{{form.infos}}</div>
           </el-form-item>
         </el-form>
@@ -151,7 +151,7 @@
 
       <!-- 抽屉底部 -->
       <div class="drawer-footer">
-        <el-button @click="formDetailVisible = false">关闭</el-button>
+        <el-button @click="formDetailVisible = false">閉じる</el-button>
       </div>
     </el-drawer>
   </div>
@@ -174,7 +174,7 @@ export default {
       user: JSON.parse(localStorage.getItem('user') || '{}'),
       rules: {
         username: [
-          {required: true, message: '请输入账号', trigger: 'blur'},
+          {required: true, message: 'ユーザー名を入力してください', trigger: 'blur'},
         ]
       },
       isFullscreen: false,
@@ -187,13 +187,13 @@ export default {
   },
   methods: {
     del(id) {
-      this.$confirm('您确认删除吗？', '确认删除', {type: "warning"}).then(response => {
+      this.$confirm('削除してもよろしいですか？', '削除確認', {type: "warning"}).then(response => {
         this.$request.delete('/user/delete/' + id).then(res => {
           if (res.code === '200') {   // 表示操作成功
-            this.$notify.success({title: '成功', message: '操作成功', showClose: false, duration: 2000});
+            this.$notify.success({title: '完了', message: '操作が完了しました', showClose: false, duration: 2000});
             this.load(1)
           } else {
-            this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});  // 弹出错误的信息
+            this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
           }
         })
       }).catch(() => {
@@ -220,11 +220,11 @@ export default {
             data: this.form
           }).then(res => {
             if (res.code === '200') {
-              this.$notify.success({title: '成功', message: '保存成功', showClose: false, duration: 2000});
+              this.$notify.success({title: '完了', message: '保存しました', showClose: false, duration: 2000});
               this.load(1)
               this.fromVisible = false
             } else {
-              this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});// 弹出错误的信息
+              this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
             }
           })
         }

@@ -37,7 +37,7 @@ public class OrdersServiceImpl implements IOrdersService {
         // 1、判断商品库存是否充足，如果不充足，给提示
         Goods goods = goodsMapper.selectById(orders.getGoodsId());
         // 2、如果商品库存充足，就下单（数据库新增一条订单）
-        if (goods.getStore() < orders.getNums()){
+        if (goods.getStore() == null || orders.getNums() == null || goods.getStore() <= orders.getNums()){
             throw new ServiceException("201", goods.getName() + "商品库存不足");
         }
 
@@ -50,9 +50,7 @@ public class OrdersServiceImpl implements IOrdersService {
 
         // 4、商品库存减去对应的数量
         goods.setStore(goods.getStore() - orders.getNums());
-        // 5、销量累加对应的数量
-        goods.setSales(goods.getSales() + orders.getNums());
-        // 6、更新一下商品
+        // 5、更新商品库存
         goodsMapper.updateById(goods);
     }
 

@@ -1,5 +1,5 @@
 <template>
-  <div style="width: 60%;min-height: 90vh;margin: 10px auto">
+  <div class="goods-detail-page">
     <div style="display: flex">
       <div style="flex: 4">
         <el-image v-if="goods.cover" style="width: 400px; height: 300px" :src="goods.cover" fit="cover" :preview-src-list="[goods.cover]"></el-image>
@@ -9,33 +9,31 @@
           <b style="font-size: 20px;color: #303133;">{{goods.name}}</b>
         </div>
         <div style="padding: 0 15px;margin-top: 10px;">
-          <p style="font-size: 11px;color: #606266;line-height: 17px;">{{goods.descr}}</p>
+          <div class="goods-summary" v-html="summaryHtml"></div>
           <div style="border-bottom: 1px dashed #eaeaea;margin-top: 10px"></div>
         </div>
         <div style="display: flex;padding: 0 15px;margin-top: 20px;align-items: center">
           <div>
-            <span style="font-size: 11px;color: #606266">价格：</span>
-            <span style="font-size: 17px;color: #ff6700;font-weight: bold">￥{{goods.price}}</span>
+            <span style="font-size: 11px;color: #606266">{{ $t('common.price') }}：</span>
+            <span style="font-size: 17px;color: #ff6700;font-weight: bold">{{goods.price}}円</span>
           </div>
           <div style="margin-left: 20px">
-            <span style="font-size: 11px;color: #606266">库存：{{goods.store}}</span>
-          </div>
-          <div style="margin-left: 20px">
-            <span style="font-size: 11px;color: #606266">累计热销：{{goods.sales}}</span>
+            <span style="font-size: 11px;color: #606266">{{ $t('common.stock') }}：{{goods.store}}</span>
           </div>
         </div>
+        <div class="publisher-detail">{{ $t('common.publisher') }}：{{ goods.userName || $t('common.anonymous') }}</div>
         <div style="padding: 0 15px;margin-top: 20px">
-          <span style="font-size: 11px;color: #606266">上架时间：{{goods.date}}</span>
+          <span style="font-size: 11px;color: #606266">{{ $t('common.listedAt') }}：{{goods.date}}</span>
         </div>
         <div style="display: flex;padding: 0 15px;margin-top: 15px;gap: 20px">
           <div>
-            <el-input-number v-model="num" @change="handleChange" :min="1" :max="10" label="描述文字"></el-input-number>
+            <el-input-number v-model="num" @change="handleChange" :min="1" :max="10" :label="$t('common.stock')"></el-input-number>
           </div>
           <div>
-            <el-button type="primary" style="width: 180px" @click="buy">立即购买</el-button>
+            <el-button type="primary" style="width: 180px" @click="buy">{{ $t('common.buyNow') }}</el-button>
           </div>
           <div>
-            <el-button :type="isCollect ? 'danger' : 'warning'" style="width: 180px" @click="collect">{{isCollect ? '已收藏' : '收藏'}}</el-button>
+            <el-button :type="isCollect ? 'danger' : 'warning'" style="width: 180px" @click="collect">{{isCollect ? $t('common.favorited') : $t('common.favorite')}}</el-button>
           </div>
         </div>
       </div>
@@ -44,17 +42,17 @@
     <div style="margin-top: 30px">
       <el-card>
         <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
-          <el-tab-pane label="详细介绍" name="goods">
-            <div class="w-e-text" v-html="goods.content"></div>
+          <el-tab-pane :label="$t('common.detailIntroduction')" name="goods">
+            <div class="w-e-text goods-content-detail" v-html="goods.content || summaryHtml"></div>
           </el-tab-pane>
-          <el-tab-pane label="购买须知" name="notice">
+          <el-tab-pane :label="$t('common.purchaseNotice')" name="notice">
             <div style="padding: 25px;">
-              <h3 style="color: #333;margin: 15px 0;">购买说明</h3>
+              <h3 style="color: #333;margin: 15px 0;">{{ $t('common.purchaseGuide') }}</h3>
               <div>
-                <div style="margin: 10px 0;color: #666;">1、正品保证</div>
-                <div style="margin: 10px 0;color: #666;">2、7天无理由退货</div>
-                <div style="margin: 10px 0;color: #666;">3、全国包邮</div>
-                <div style="margin: 10px 0;color: #666;">4、售后无忧</div>
+                <div style="margin: 10px 0;color: #666;">1、{{ $t('common.genuine') }}</div>
+                <div style="margin: 10px 0;color: #666;">2、{{ $t('common.returnPolicy') }}</div>
+                <div style="margin: 10px 0;color: #666;">3、{{ $t('common.freeShipping') }}</div>
+                <div style="margin: 10px 0;color: #666;">4、{{ $t('common.afterSales') }}</div>
               </div>
             </div>
           </el-tab-pane>
@@ -81,6 +79,19 @@ export default {
     this.loadGoods()
   },
   methods:{
+    escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+    },
+    stripHtml(value) {
+      const container = document.createElement('div')
+      container.innerHTML = value || ''
+      return (container.textContent || container.innerText || '').replace(/\s+/g, ' ').trim()
+    },
     loadGoods(){
       this.$request.get('/goods/selectById?id=' + this.id).then(res => {
         this.goods = res.data
@@ -126,11 +137,41 @@ export default {
           this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
         }
       })
+    },
+    computed: {
+      summaryHtml() {
+        const summary = this.goods.content ? this.stripHtml(this.goods.content) : this.goods.descr
+        return summary ? '<p>' + this.escapeHtml(summary) + '</p>' : ''
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+.goods-detail-page {
+  width: 60%;
+  min-height: 90vh;
+  margin: 10px auto;
+}
+
+.publisher-detail {
+  margin: 14px 15px 0;
+  color: #606266;
+  font-size: 12px;
+}
+
+.goods-summary {
+  padding: 0 15px;
+  color: #606266;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.goods-summary >>> img,
+.goods-content-detail >>> img {
+  max-width: 100%;
+  height: auto;
+}
 
 </style>

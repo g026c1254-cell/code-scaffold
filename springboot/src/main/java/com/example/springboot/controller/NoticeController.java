@@ -20,6 +20,9 @@ public class NoticeController {
      */
     @PostMapping("/add")
     public Result add(@RequestBody Notice notice){
+        // 发布者信息由服务端根据 token 写入，忽略客户端传入值。
+        notice.setUserId(null);
+        notice.setUserName(null);
         noticeService.save(notice);
         return Result.success();
     }
@@ -31,6 +34,14 @@ public class NoticeController {
     public Result update(@RequestBody Notice notice){
         noticeService.update(notice);
         return Result.success();
+    }
+
+    /**
+     * 查询当前登录用户发布的公告
+     */
+    @GetMapping("/myNotices")
+    public Result myNotices(){
+        return Result.success(noticeService.myNotices());
     }
 
     /**

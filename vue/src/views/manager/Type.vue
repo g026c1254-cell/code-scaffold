@@ -2,24 +2,24 @@
   <div>
     <el-card>
       <div style="margin-bottom: 10px">
-        <el-input style="width: 200px;margin: 0 5px" placeholder="查询..." v-model="name"></el-input>
-        <el-button type="success" plain @click="load(1)">查询</el-button>
-        <el-button type="info" plain @click="reset">重置</el-button>
-        <el-button type="primary" plain @click="handleAdd">新增</el-button>
+        <el-input style="width: 200px;margin: 0 5px" placeholder="検索..." v-model="name"></el-input>
+        <el-button type="success" plain @click="load(1)">検索</el-button>
+        <el-button type="info" plain @click="reset">リセット</el-button>
+        <el-button type="primary" plain @click="handleAdd">追加</el-button>
       </div>
       <el-table :data="tableData" stripe>
-        <el-table-column prop="id" label="序号" width="70" align="center" >
+        <el-table-column prop="id" label="番号" width="70" align="center" >
           <template slot-scope='scope'>
             <span>{{ (pageNum - 1) * pageSize + (scope.$index + 1) }}</span>
           </template>
         </el-table-column>
-        <el-table-column align="center" prop="name" label="分类名称"></el-table-column>
+        <el-table-column align="center" prop="name" label="カテゴリ名"></el-table-column>
 
         <el-table-column label="操作" width="240" align="center">
           <template slot-scope="scope">
-            <el-button plain type="success" @click="detail(scope.row)" size="mini">详情</el-button>
-            <el-button plain type="primary" @click="handleEdit(scope.row)" size="mini">编辑</el-button>
-            <el-button plain type="danger" size="mini" @click=del(scope.row.id)>删除</el-button>
+            <el-button plain type="success" @click="detail(scope.row)" size="mini">詳細</el-button>
+            <el-button plain type="primary" @click="handleEdit(scope.row)" size="mini">編集</el-button>
+            <el-button plain type="danger" size="mini" @click=del(scope.row.id)>削除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -37,24 +37,24 @@
       </div>
     </el-card>
 
-    <el-dialog title="信息" :visible.sync="dialogFormVisible" width="30%" :close-on-click-modal="false">
+    <el-dialog title="情報" :visible.sync="dialogFormVisible" width="30%" :close-on-click-modal="false">
       <el-form label-width="100px" style="padding-right: 40px" :model="form" :rules="rules" ref="ruleForm">
-        <el-form-item prop="name" label="分类名称">
+        <el-form-item prop="name" label="カテゴリ名">
           <el-input v-model="form.name" autocomplete="off"></el-input>
         </el-form-item>
 
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="dialogFormVisible = false">キャンセル</el-button>
+        <el-button type="primary" @click="save">確定</el-button>
       </div>
     </el-dialog>
 
-    <el-drawer :visible.sync="drawerFormVisible" title="详情" :with-header="false">
+    <el-drawer :visible.sync="drawerFormVisible" title="詳細" :with-header="false">
       <div class="drawer-header">
-        <span class="drawer-title">详情</span>
+        <span class="drawer-title">詳細</span>
         <div class="drawer-actions">
-          <el-tooltip placement="top" :content="isFullscreen ? '退出全屏' : '全屏'">
+          <el-tooltip placement="top" :content="isFullscreen ? '全画面を終了' : '全画面'">
             <el-button icon="el-icon-full-screen" size="mini" circle @click="toggleFullscreen"/>
           </el-tooltip>
           <el-button icon="el-icon-close" size="mini" circle @click="drawerFormVisible = false"/>
@@ -63,14 +63,14 @@
 
       <div class="drawer-content" ref="drawerContent">
         <el-form label-width="100px" style="padding-right: 40px" :model="form">
-          <el-form-item prop="name" label="分类名称">
+          <el-form-item prop="name" label="カテゴリ名">
             <div>{{form.name}}</div>
           </el-form-item>
         </el-form>
       </div>
 
       <div class="drawer-footer">
-        <el-button @click="drawerFormVisible = false">关闭</el-button>
+        <el-button @click="drawerFormVisible = false">閉じる</el-button>
       </div>
     </el-drawer>
   </div>
@@ -92,7 +92,7 @@ export default {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       rules: {
         name: [
-          { required: true, message: '请输入必填项', trigger: 'blur'}
+          { required: true, message: '必須項目を入力してください', trigger: 'blur'}
         ],
       },
       isFullscreen: false,
@@ -125,11 +125,11 @@ export default {
             data: this.form
           }).then(res => {
             if (res.code === '200') {
-              this.$notify.success({title: '成功', message: '操作成功', showClose: false, duration: 2000});
+              this.$notify.success({title: '完了', message: '操作が完了しました', showClose: false, duration: 2000});
               this.dialogFormVisible = false
               this.load()
             } else {
-              this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+              this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
             }
           })
         }
@@ -164,13 +164,13 @@ export default {
       this.drawerFormVisible = true
     },
     del(id) {
-      this.$confirm('您确认删除这些数据吗？', '确认删除', {type: "warning"}).then(response => {
+      this.$confirm('これらのデータを削除しますか？', '削除確認', {type: "warning"}).then(response => {
         this.$request.delete("/type/delete?id=" + id).then(res => {
           if (res.code === '200') {
-            this.$notify.success({title: '成功', message: '操作成功', showClose: false, duration: 2000});
+            this.$notify.success({title: '完了', message: '操作が完了しました', showClose: false, duration: 2000});
             this.load()
           } else {
-            this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+            this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
           }
         })
       }).catch(() => {})

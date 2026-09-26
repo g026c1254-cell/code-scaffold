@@ -1,5 +1,6 @@
 package com.example.springboot.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -26,6 +27,7 @@ public class User {
     private Double account;
 
     @TableField(exist = false)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String token;
 
     @TableField(exist = false)

@@ -16,16 +16,16 @@ const routes = [
     component: () => import('../views/Manager.vue'),
     redirect: '/home',
     children: [
-      { path: '403', name: 'Auth', meta: { name: '无权限' }, component: () => import('../views/manager/Auth.vue') },
-      { path: 'home', name: 'ManagerHome', meta: { name: '系统首页' }, component: () => import('../views/manager/Home.vue') },
-      { path: 'admin', name: 'Admin', meta: { name: '管理员信息', requireAdmin: true }, component: () => import('../views/manager/Admin.vue') },
-      { path: 'user', name: 'User', meta: { name: '用户信息', requireAdmin: true }, component: () => import('../views/manager/User.vue') },
-      { path: 'person', name: 'ManagerPerson', meta: { name: '个人信息' }, component: () => import('../views/manager/Person.vue') },
-      { path: 'type', name: 'Type', meta: { name: '商品分类信息' }, component: () => import('../views/manager/Type.vue') },
-      { path: 'goods', name: 'Goods', meta: { name: '商品信息' }, component: () => import('../views/manager/Goods.vue') },
-      { path: 'orders', name: 'ManagerOrders', meta: { name: '订单信息' }, component: () => import('../views/manager/Orders.vue') },
-      { path: 'notice', name: 'Notice', meta: { name: '公告信息' }, component: () => import('../views/manager/Notice.vue') },
-      { path: 'Carousel', name: 'Carousel', meta: { name: '轮播图信息' }, component: () => import('../views/manager/Carousel.vue') },
+      { path: '403', name: 'Auth', meta: { name: 'アクセス権限なし' }, component: () => import('../views/manager/Auth.vue') },
+      { path: 'home', name: 'ManagerHome', meta: { name: 'システムホーム' }, component: () => import('../views/manager/Home.vue') },
+      { path: 'admin', name: 'Admin', meta: { name: '管理者情報', requireAdmin: true }, component: () => import('../views/manager/Admin.vue') },
+      { path: 'user', name: 'User', meta: { name: 'ユーザー情報', requireAdmin: true }, component: () => import('../views/manager/User.vue') },
+      { path: 'person', name: 'ManagerPerson', meta: { name: '個人情報' }, component: () => import('../views/manager/Person.vue') },
+      { path: 'type', name: 'Type', meta: { name: '商品カテゴリ' }, component: () => import('../views/manager/Type.vue') },
+      { path: 'goods', name: 'Goods', meta: { name: '商品情報' }, component: () => import('../views/manager/Goods.vue') },
+      { path: 'orders', name: 'ManagerOrders', meta: { name: '注文情報' }, component: () => import('../views/manager/Orders.vue') },
+      { path: 'notice', name: 'Notice', meta: { name: 'お知らせ' }, component: () => import('../views/manager/Notice.vue') },
+      { path: 'Carousel', name: 'Carousel', meta: { name: 'カルーセル画像' }, component: () => import('../views/manager/Carousel.vue') },
     ]
   },
   {
@@ -35,12 +35,13 @@ const routes = [
     redirect: '/front/home',
     children: [
       { path: 'home', name: 'FrontHome', meta: { name: '首页信息' }, component: () => import('../views/front/Home.vue') },
-      { path: 'person', name: 'FrontPerson', meta: { name: '个人信息' }, component: () => import('../views/front/Person.vue') },
-      { path: 'password', name: 'Password', meta: { name: '修改密码' }, component: () => import('../views/front/Password.vue') },
+      { path: 'person', name: 'FrontPerson', meta: { name: '个人中心', requiresAuth: true }, component: () => import('../views/front/Person.vue') },
+      { path: 'profile', name: 'FrontProfile', meta: { name: '个人资料', requiresAuth: true }, component: () => import('../views/front/Profile.vue') },
+      { path: 'password', name: 'Password', meta: { name: '修改密码', requiresAuth: true }, component: () => import('../views/front/Password.vue') },
       {path: 'goods', name: 'FrontGoods', meta: { name: '全部商品' }, component: () => import('../views/front/Goods.vue')},
       {path: 'goodsDetail', name: 'GoodsDetail', meta: { name: '商品详情' }, component: () => import('../views/front/GoodsDetail.vue')},
-      {path: 'collect', name: 'Collect', meta: { name: '我的收藏' }, component: () => import('../views/front/Collect.vue')},
-      {path: 'orders', name: 'FrontOrders', meta: { name: '我的订单' }, component: () => import('../views/front/Orders.vue')},
+      {path: 'collect', name: 'Collect', meta: { name: '我的收藏', requiresAuth: true }, component: () => import('../views/front/Collect.vue')},
+      {path: 'orders', name: 'FrontOrders', meta: { name: '我的订单', requiresAuth: true }, component: () => import('../views/front/Orders.vue')},
     ]
   },
   { path: '/login', name: 'Login', meta: { name: '登录' }, component: () => import('../views/Login.vue') },
@@ -56,7 +57,12 @@ const router = new VueRouter({
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  let user = {}
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}')
+  } catch (error) {
+    localStorage.removeItem('user')
+  }
   if (to.path === '/'){
     if (user.role){
       if (user.role === 'ADMIN'){
@@ -67,13 +73,12 @@ router.beforeEach((to, from, next) => {
     } else {
       next('/login')
     }
+  } else if (to.matched.length === 0) {
+    next('/404')
+  } else if (to.matched.some(record => record.meta.requiresAuth) && (!user.id || !user.token)) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
   } else {
-    if (to.matched.length === 0){
-      next('/404')
-      return
-    } else {
-      next()
-    }
+    next()
   }
 })
 

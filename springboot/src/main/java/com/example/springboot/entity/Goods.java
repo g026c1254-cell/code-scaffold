@@ -21,7 +21,6 @@ public class Goods {
     private String date;
     private Integer typeId;
     private String state;
-    private Integer sales;
     @TableField(exist = false)
     private String typeName;
     @TableField(exist = false)
