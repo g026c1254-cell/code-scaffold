@@ -18,7 +18,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Autowired
     private UserMapper userMapper;
 
-
     @Override
     public boolean save(User entity) {
         if (StrUtil.isBlank(entity.getName())) {
@@ -33,46 +32,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return super.save(entity);
     }
 
-    public User selectByUsername(String username,String role) {
+    public User selectByUsername(String username, String role) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);  //  eq => ==   where username = #{username}
+        queryWrapper.eq("username", username);
         queryWrapper.eq("role", role);
-        // 根据用户名查询数据库的用户信息，相当于select * from user where username = #{username}
         return getOne(queryWrapper);
     }
 
     // 验证用户账户是否合法
     public User login(User user) {
-        User dbUser = selectByUsername(user.getUsername(),user.getRole());
+        User dbUser = selectByUsername(user.getUsername(), user.getRole());
         if (dbUser == null) {
-            throw new ServiceException("用户名或密码错误");
+            throw new ServiceException("ユーザー名またはパスワードが正しくありません");
         }
         if (!user.getPassword().equals(dbUser.getPassword())) {
-            throw new ServiceException("用户名或密码错误");
+            throw new ServiceException("ユーザー名またはパスワードが正しくありません");
         }
         // 生成token
         String token = TokenUtils.createToken(dbUser.getId().toString(), dbUser.getPassword());
         dbUser.setToken(token);
+        // 优化：返回给前端前脱敏密码，杜绝明文密码泄露及本地缓存风险
+        dbUser.setPassword(null);
         return dbUser;
     }
 
     public User register(User user) {
-        User dbUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername,user.getUsername()));
+        User dbUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, user.getUsername()));
         if (dbUser != null) {
-            throw new ServiceException("用户名已存在");
+            throw new ServiceException("ユーザー名は既に使用されています");
         }
         user.setName(user.getUsername());
         userMapper.insert(user);
+        // 优化：脱敏密码返回
+        user.setPassword(null);
         return user;
     }
 
     public void resetPassword(User user) {
-        User dbUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername,user.getUsername()));
+        User dbUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, user.getUsername()));
         if (dbUser == null) {
-            throw new ServiceException("用户不存在");
+            throw new ServiceException("ユーザーが存在しません");
         }
-        if (!user.getPhone().equals(dbUser.getPhone())) {
-            throw new ServiceException("验证错误");
+        // 优化：避免 null 对象 equals 导致的空指针异常
+        if (!StrUtil.equals(user.getPhone(), dbUser.getPhone())) {
+            throw new ServiceException("電話番号の認証に失敗しました");
         }
         dbUser.setPassword("123");
         updateById(dbUser);
@@ -82,7 +85,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public void updatePassword(User user) {
         int update = userMapper.updatePassword(user);
         if (update < 1) {
-            throw new ServiceException("原始密码错误");
+            throw new ServiceException("現在のパスワードが正しくありません");
         }
     }
 }

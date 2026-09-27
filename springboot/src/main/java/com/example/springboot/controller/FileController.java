@@ -3,6 +3,8 @@ package com.example.springboot.controller;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.Dict;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.example.springboot.common.AuthAccess;
 import com.example.springboot.common.Result;
 import jakarta.servlet.ServletOutputStream;
@@ -49,24 +51,19 @@ public class FileController {
      */
     @PostMapping("/upload")
     public Result upload(MultipartFile file) throws IOException {
-        // 文件的原始名称 ps：aaa.png
+        if (file == null || file.isEmpty()) {
+            return Result.error("400", "アップロードファイルが空です");
+        }
         String originalFilename = file.getOriginalFilename();
-        // aaa
-        String mainName = FileUtil.mainName(originalFilename);
-        // png
         String extName = FileUtil.extName(originalFilename);
         if (!FileUtil.exist(ROOT_PATH)) {
-            // 如果当前文件的父级目录不存在，就创建
             FileUtil.mkdir(ROOT_PATH);
         }
-        // 如果当前上传的文件已经存在了，那么这个时候我就要重名一个文件名称
-        if (FileUtil.exist(ROOT_PATH + File.separator + originalFilename)) {
-            originalFilename = System.currentTimeMillis() + "_" + mainName + "." + extName;
-        }
-        File saveFile = new File(ROOT_PATH + File.separator + originalFilename);
-        // 存储文件到本地的磁盘里面去
+        // 优化：采用时间戳+UUID生成唯一文件名，防止特殊字符注入与文件冲突
+        String safeFileName = System.currentTimeMillis() + "_" + IdUtil.fastSimpleUUID() + (StrUtil.isNotBlank(extName) ? ("." + extName) : "");
+        File saveFile = new File(ROOT_PATH + File.separator + safeFileName);
         file.transferTo(saveFile);
-        String url = "http://" + ip + ":" + port + "/file/download/" + originalFilename;
+        String url = "http://" + ip + ":" + port + "/file/download/" + safeFileName;
         return Result.success(url);
     }
 
@@ -76,15 +73,22 @@ public class FileController {
     @AuthAccess
     @GetMapping("/download/{fileName}")
     public void download(@PathVariable String fileName, HttpServletResponse response) throws IOException {
-        // 附件下载
-        //response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName, "UTF-8"));
-        // 预览
-        response.addHeader("Content-Disposition", "inline;filename=" + URLEncoder.encode(fileName, "UTF-8"));
-        String filePath = ROOT_PATH  + File.separator + fileName;
-        if (!FileUtil.exist(filePath)) {
+        // 优化：路径穿越攻击防御，禁止包含 .. 或非法跳出 ROOT_PATH 目录
+        if (StrUtil.isBlank(fileName) || fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-        byte[] bytes = FileUtil.readBytes(filePath);
+
+        File targetFile = new File(ROOT_PATH, fileName);
+        String canonicalBasePath = new File(ROOT_PATH).getCanonicalPath();
+        String canonicalTargetPath = targetFile.getCanonicalPath();
+        if (!canonicalTargetPath.startsWith(canonicalBasePath) || !targetFile.exists()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        response.addHeader("Content-Disposition", "inline;filename=" + URLEncoder.encode(fileName, "UTF-8"));
+        byte[] bytes = FileUtil.readBytes(targetFile);
         ServletOutputStream outputStream = response.getOutputStream();
         try {
             outputStream.write(bytes);
@@ -100,50 +104,18 @@ public class FileController {
      */
     @PostMapping("/editor/upload")
     public Dict editorUpload(MultipartFile file) throws IOException {
-        // 文件的原始名称 aaa.png
-        String originalFilename = file.getOriginalFilename();
-        // aaa
-        String mainName = FileUtil.mainName(originalFilename);
-        // png
-        String extName = FileUtil.extName(originalFilename);
-        if (!FileUtil.exist(ROOT_PATH)) {
-            // 如果当前文件的父级目录不存在，就创建
-            FileUtil.mkdir(ROOT_PATH);
+        if (file == null || file.isEmpty()) {
+            return Dict.create().set("errno", 1).set("message", "アップロードファイルが空です");
         }
-        // 如果当前上传的文件已经存在了，那么这个时候我就要重名一个文件名称
-        if (FileUtil.exist(ROOT_PATH + File.separator + originalFilename)) {
-            originalFilename = System.currentTimeMillis() + "_" + mainName + "." + extName;
-        }
-        File saveFile = new File(ROOT_PATH + File.separator + originalFilename);
-        // 存储文件到本地的磁盘里面去
-        file.transferTo(saveFile);
-        String url = "http://" + ip + ":" + port + "/file/download/" + originalFilename;
-
-        Dict dict = Dict.create().set("errno", 0).set("data", CollUtil.newArrayList(Dict.create().set("url", url)));
-        //返回文件的链接，这个链接就是文件的下载地址，这个下载地址就是我的后台提供出来的
-        return dict;
-    }
-
-    /**
-     * 富文本上传视频
-     */
-    @PostMapping("/editor/uploadVideo")
-    public Dict editorUploadVideo(MultipartFile file) throws IOException {
         String originalFilename = file.getOriginalFilename();
-        // aaa.png
-        String mainName = FileUtil.mainName(originalFilename);
         String extName = FileUtil.extName(originalFilename);
         if (!FileUtil.exist(ROOT_PATH)) {
             FileUtil.mkdir(ROOT_PATH);
         }
-        if (FileUtil.exist(ROOT_PATH + File.separator + originalFilename)) {
-            originalFilename = System.currentTimeMillis() + "_" + mainName + "." + extName;
-        }
-        File saveFile = new File(ROOT_PATH + File.separator + originalFilename);
+        String safeFileName = System.currentTimeMillis() + "_" + IdUtil.fastSimpleUUID() + (StrUtil.isNotBlank(extName) ? ("." + extName) : "");
+        File saveFile = new File(ROOT_PATH + File.separator + safeFileName);
         file.transferTo(saveFile);
-        String url = "http://" + ip + ":" + port + "/file/download/" + originalFilename;
-
-        Dict dict = Dict.create().set("errno", 0).set("data", Dict.create().set("url", url));
-        return dict;
+        String url = "http://" + ip + ":" + port + "/file/download/" + safeFileName;
+        return Dict.create().set("errno", 0).set("data", CollUtil.newArrayList(Dict.create().set("url", url)));
     }
 }

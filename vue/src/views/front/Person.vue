@@ -88,15 +88,25 @@
       </el-card>
     </section>
 
-    <el-dialog :title="$t('common.editProduct')" :visible.sync="editDialogVisible" width="560px" :close-on-click-modal="false">
+    <el-dialog custom-class="mobile-dialog" :title="$t('common.editProduct')" :visible.sync="editDialogVisible" width="560px" :close-on-click-modal="false">
       <el-form ref="editGoodsForm" :model="editGoodsForm" :rules="goodsRules" label-width="90px">
         <el-form-item :label="$t('common.productName')" prop="name">
           <el-input v-model="editGoodsForm.name" maxlength="100"></el-input>
         </el-form-item>
-        <el-form-item :label="$t('common.productCategory')" prop="typeId">
-          <el-select v-model="editGoodsForm.typeId" style="width: 100%">
-            <el-option v-for="type in types" :key="type.id" :label="type.name" :value="type.id"></el-option>
-          </el-select>
+        <el-form-item :label="$t('common.productCategory')" prop="typeId" class="category-form-item">
+          <div class="category-chips-grid">
+            <div
+              v-for="type in types"
+              :key="type.id"
+              class="category-chip"
+              :class="{ 'is-selected': editGoodsForm.typeId === type.id }"
+              @click="handleSelectCategory(type.id)"
+            >
+              <i class="el-icon-check check-mark" v-if="editGoodsForm.typeId === type.id"></i>
+              <span class="chip-label">{{ displayTypeName(type.name) }}</span>
+            </div>
+          </div>
+          <el-input v-model="editGoodsForm.typeId" style="display: none;"></el-input>
         </el-form-item>
         <el-form-item :label="$t('common.price')" prop="price">
           <el-input-number v-model="editGoodsForm.price" :min="0.01" :precision="2" :step="1" controls-position="right" style="width: 100%"></el-input-number>
@@ -104,26 +114,48 @@
         <el-form-item :label="$t('common.stock')" prop="store">
           <el-input-number v-model="editGoodsForm.store" :min="1" :step="1" controls-position="right" style="width: 100%"></el-input-number>
         </el-form-item>
-        <el-form-item :label="$t('common.productImage')" prop="cover">
-          <el-upload
-            action=""
-            :http-request="uploadEditCover"
-            :show-file-list="false"
-            :before-upload="beforeCoverUpload">
-            <img v-if="editGoodsForm.cover" :src="getImageUrl(editGoodsForm.cover)" class="edit-cover-preview">
-            <i v-else class="el-icon-plus edit-cover-uploader"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item :label="$t('common.description')" prop="descr">
-          <div class="goods-editor">
-            <Toolbar :editor="editor" :defaultConfig="toolbarConfig" mode="default" />
-            <Editor
-              v-model="editGoodsForm.content"
-              :defaultConfig="editorConfig"
-              mode="default"
-              @onCreated="onEditorCreated"
-            />
+        <el-form-item label="商品画像" prop="cover">
+          <div class="goods-upload-box">
+            <el-upload
+              action=""
+              :http-request="uploadEditCover"
+              :show-file-list="false"
+              accept="image/*"
+              :before-upload="beforeCoverUpload">
+              <div v-if="editGoodsForm.cover" class="cover-preview-wrapper">
+                <img :src="getImageUrl(editGoodsForm.cover)" class="edit-cover-preview">
+                <div class="cover-overlay">
+                  <i class="el-icon-camera"></i>
+                  <span>画像を変更</span>
+                </div>
+              </div>
+              <div v-else class="upload-placeholder-card">
+                <i class="el-icon-upload upload-icon"></i>
+                <div class="upload-tip-text">クリックして商品画像をアップロード</div>
+                <div class="upload-sub-tip">JPG / PNG / WEBP形式対応</div>
+              </div>
+            </el-upload>
           </div>
+        </el-form-item>
+        <el-form-item label="商品説明" prop="descr">
+          <el-input
+            type="textarea"
+            :rows="4"
+            v-model="editGoodsForm.descr"
+            maxlength="1000"
+            show-word-limit
+            placeholder="商品の状態（キズ・汚れの有無）、使用期間、サイズ、付属品などを詳しく記入してください"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="購入注意事項" prop="purchaseNotice">
+          <el-input
+            type="textarea"
+            :rows="3"
+            v-model="editGoodsForm.purchaseNotice"
+            maxlength="500"
+            show-word-limit
+            placeholder="例：八王子キャンパス内での手渡し希望、平日の夕方対応可能、即購入OK、返品不可など"
+          ></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -132,7 +164,7 @@
       </div>
     </el-dialog>
 
-    <el-dialog :title="$t('common.editNotice')" :visible.sync="noticeDialogVisible" width="460px" :close-on-click-modal="false">
+    <el-dialog custom-class="mobile-dialog" :title="$t('common.editNotice')" :visible.sync="noticeDialogVisible" width="460px" :close-on-click-modal="false">
       <el-form ref="editNoticeForm" :model="editNoticeForm" :rules="noticeRules" label-width="80px">
         <el-form-item :label="$t('common.title')" prop="name">
           <el-input v-model="editNoticeForm.name" maxlength="100"></el-input>
@@ -182,23 +214,24 @@ export default {
       noticeEditor: null,
       toolbarConfig: {},
       editorConfig: {
-        placeholder: '请输入商品说明',
+        placeholder: '商品の状態や詳細説明を入力してください',
         MENU_CONF: {
           uploadImage: {
             server: '',
             fieldName: 'file',
-            headers: {}
+            headers: {},
+            allowedFileTypes: ['image/*']
           }
         }
       },
       goodsRules: {
-        name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
-        typeId: [{ required: true, message: '请选择商品分类', trigger: 'change' }],
-        price: [{ required: true, message: '请输入商品价格', trigger: 'change' }]
+        name: [{ required: true, message: '商品名を入力してください', trigger: 'blur' }],
+        typeId: [{ required: true, message: '商品カテゴリを選択してください', trigger: 'change' }],
+        price: [{ required: true, message: '価格を入力してください', trigger: 'change' }]
       },
       noticeRules: {
-        name: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
-        content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
+        name: [{ required: true, message: 'お知らせのタイトルを入力してください', trigger: 'blur' }],
+        content: [{ required: true, message: 'お知らせの内容を入力してください', trigger: 'blur' }]
       }
     }
   },
@@ -232,7 +265,28 @@ export default {
         this.types = Array.isArray(res.data) ? res.data : []
       })
     },
+    displayTypeName(name) {
+      if (!name) return ''
+      const key = 'category.' + name
+      const translated = this.$t(key)
+      return translated === key ? name : translated
+    },
+    handleSelectCategory(id) {
+      this.editGoodsForm.typeId = id
+      this.$nextTick(() => {
+        if (this.$refs.editGoodsForm) {
+          this.$refs.editGoodsForm.validateField('typeId')
+        }
+      })
+    },
     openEditGoods(item) {
+      let descr = item.descr || ''
+      let purchaseNotice = ''
+      if (item.content && item.content.indexOf('<!--PURCHASE_NOTICE_START-->') !== -1) {
+        const parts = item.content.split('<!--PURCHASE_NOTICE_START-->')
+        descr = parts[0].trim() || descr
+        purchaseNotice = parts[1].trim()
+      }
       this.editGoodsForm = {
         id: item.id,
         name: item.name,
@@ -240,8 +294,8 @@ export default {
         price: item.price,
         store: Math.max(1, item.store || 1),
         cover: item.cover,
-        descr: item.descr || '',
-        content: item.content || ''
+        descr: descr,
+        purchaseNotice: purchaseNotice
       }
       this.editDialogVisible = true
       this.$nextTick(() => this.$refs.editGoodsForm && this.$refs.editGoodsForm.clearValidate())
@@ -249,8 +303,13 @@ export default {
     submitEditGoods() {
       this.$refs.editGoodsForm.validate(valid => {
         if (!valid) return
+        let combinedContent = this.editGoodsForm.descr || ''
+        if (this.editGoodsForm.purchaseNotice) {
+          combinedContent += '\n<!--PURCHASE_NOTICE_START-->\n' + this.editGoodsForm.purchaseNotice
+        }
         const form = Object.assign({}, this.editGoodsForm, {
-          descr: this.stripHtml(this.editGoodsForm.content) || this.editGoodsForm.descr
+          descr: this.editGoodsForm.descr,
+          content: combinedContent
         })
         this.$request.put('/goods/update', form).then(res => {
           if (res.code === '200') {
@@ -446,7 +505,8 @@ export default {
   display: block;
   width: 100%;
   height: 150px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f8fafc;
 }
 
 .activity-content {
@@ -464,7 +524,7 @@ export default {
 
 .activity-meta {
   margin-top: 8px;
-  color: #ff6700;
+  color: #ff7e29;
   font-weight: 600;
 }
 
@@ -489,7 +549,8 @@ export default {
   width: 110px;
   height: 110px;
   border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f8fafc;
 }
 
 .edit-cover-uploader {
@@ -526,7 +587,7 @@ export default {
 
 .remove-collect {
   padding: 4px 0;
-  color: #ea580c;
+  color: #ff7e29;
 }
 
 @media (max-width: 700px) {
@@ -538,16 +599,23 @@ export default {
     width: 100%;
   }
 
+  .account-card >>> .el-tabs__nav-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .account-card >>> .el-tabs__nav {
     display: flex;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
   }
 
   .account-card >>> .el-tabs__item {
-    flex: 1;
-    padding: 0 8px;
+    flex: none;
+    padding: 0 14px;
+    font-size: 13px;
+    white-space: nowrap;
     text-align: center;
-    font-size: 12px;
   }
 
   .activity-actions {
@@ -559,13 +627,169 @@ export default {
   }
 
   .activity-image {
-    height: 120px;
+    height: 160px;
+    object-fit: contain;
   }
 
   .account-card >>> .el-table {
     width: 100%;
     overflow-x: auto;
   }
+
+  .category-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-chip:hover {
+  border-color: #ff8a3d;
+  color: #ff8a3d;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.category-chip.is-selected {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 2px solid #ff8a3d !important;
+  color: #ea6b1f;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+
+.category-chip .check-mark {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ff8a3d;
+}
+
+@media (max-width: 520px) {
+  .category-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .category-chip {
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 13px;
+    border-radius: 10px;
+    text-align: center;
+  }
+}
+
+/* 移动端弹窗响应式样式 */
+  .mobile-dialog >>> .el-dialog {
+    width: 94% !important;
+    max-width: 520px;
+    margin: 20px auto !important;
+    border-radius: 14px;
+  }
+
+  .mobile-dialog >>> .el-dialog__body {
+    padding: 16px 14px;
+    max-height: 68vh;
+    overflow-y: auto;
+  }
+
+  .mobile-dialog >>> .el-form-item__label {
+    float: none;
+    display: block;
+    width: 100% !important;
+    text-align: left;
+    padding: 0 0 6px;
+    line-height: 1.3;
+  }
+
+  .mobile-dialog >>> .el-form-item__content {
+    margin-left: 0 !important;
+  }
+}
+
+.goods-upload-box {
+  width: 100%;
+}
+.cover-preview-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #fed7aa;
+  cursor: pointer;
+}
+.cover-preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+.upload-placeholder-card {
+  width: 100%;
+  max-width: 320px;
+  height: 110px;
+  border: 2px dashed #fed7aa;
+  border-radius: 12px;
+  background: #fff7ed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.upload-placeholder-card:hover {
+  border-color: #ff8a3d;
+  background: #ffedd5;
+}
+.upload-icon {
+  font-size: 28px;
+  color: #ff8a3d;
+  margin-bottom: 4px;
+}
+.upload-tip-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ea6b1f;
+}
+.upload-sub-tip {
+  font-size: 11px;
+  color: #9a3412;
+  margin-top: 2px;
 }
 
 </style>

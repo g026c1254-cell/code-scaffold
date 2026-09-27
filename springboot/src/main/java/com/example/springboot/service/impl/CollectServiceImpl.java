@@ -1,5 +1,6 @@
 package com.example.springboot.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -16,8 +17,12 @@ import com.example.springboot.utils.TokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class CollectServiceImpl implements ICollectService {
@@ -33,20 +38,22 @@ public class CollectServiceImpl implements ICollectService {
 
     @Override
     public void save(Collect collect) {
-        Integer userId = TokenUtils.getCurrentUser().getId();
+        User currentUser = TokenUtils.getCurrentUser();
+        if (currentUser == null) {
+            throw new ServiceException("401", "ログインしてください");
+        }
+        Integer userId = currentUser.getId();
         // 1、判断该用户是否之前收藏过该商品
-        // select * from collect where user_id = xx and goods_id = xx
         LambdaQueryWrapper<Collect> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Collect::getUserId, userId);
-        queryWrapper.eq(Collect::getGoodsId,collect.getGoodsId());
+        queryWrapper.eq(Collect::getGoodsId, collect.getGoodsId());
         Collect one = collectMapper.selectOne(queryWrapper);
-        // 2、如果收藏过就给之前的记录删掉，提示已收藏
-        if (Objects.nonNull(one)){
+        // 2、如果收藏过就删除之前的记录（取消收藏）
+        if (Objects.nonNull(one)) {
             collectMapper.delete(queryWrapper);
-            // 200 除200之外的状态码
-            throw new ServiceException("201","已取消收藏");
+            throw new ServiceException("201", "お気に入りを解除しました");
         }
-        // 3、如果没收藏，我们就把这条记录插入到数据库
+        // 3、如果没收藏，则新增收藏
         collect.setUserId(userId);
         collect.setTime(DateUtil.now());
         collectMapper.insert(collect);
@@ -59,6 +66,17 @@ public class CollectServiceImpl implements ICollectService {
 
     @Override
     public void remove(Integer id) {
+        Collect collect = collectMapper.selectById(id);
+        if (collect == null) {
+            return;
+        }
+        User currentUser = TokenUtils.getCurrentUser();
+        if (currentUser == null) {
+            throw new ServiceException("401", "ログインしてください");
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole()) && !currentUser.getId().equals(collect.getUserId())) {
+            throw new ServiceException("403", "他人のお気に入りを削除する権限がありません");
+        }
         collectMapper.deleteById(id);
     }
 
@@ -77,25 +95,50 @@ public class CollectServiceImpl implements ICollectService {
         Page<Collect> page = new Page<>(pageNum, pageSize);
 
         Page<Collect> collectPage = collectMapper.selectPage(page, null);
-        collectPage.getRecords().stream().forEach(collect -> {
-            User user = userMapper.selectById(collect.getUserId());
-            collect.setUserName(Objects.nonNull(user) ? user.getName() : "未知用户");
+        List<Collect> records = collectPage.getRecords();
+        if (CollUtil.isNotEmpty(records)) {
+            Set<Integer> userIds = records.stream().map(Collect::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<Integer> goodsIds = records.stream().map(Collect::getGoodsId).filter(Objects::nonNull).collect(Collectors.toSet());
 
-            Goods goods = goodsMapper.selectById(collect.getGoodsId());
-            collect.setGoodsName(Objects.nonNull(goods) ? goods.getName() : "未知商品");
-        });
+            Map<Integer, String> userMap = CollUtil.isEmpty(userIds) ? Map.of() :
+                    userMapper.selectBatchIds(userIds).stream().collect(Collectors.toMap(User::getId, User::getName, (k1, k2) -> k1));
+            Map<Integer, String> goodsMap = CollUtil.isEmpty(goodsIds) ? Map.of() :
+                    goodsMapper.selectBatchIds(goodsIds).stream().collect(Collectors.toMap(Goods::getId, Goods::getName, (k1, k2) -> k1));
+
+            for (Collect item : records) {
+                item.setUserName(userMap.getOrDefault(item.getUserId(), "未知ユーザー"));
+                item.setGoodsName(goodsMap.getOrDefault(item.getGoodsId(), "未知商品"));
+            }
+        }
         return collectPage;
     }
 
     @Override
     public List<Collect> myCollect() {
+        User currentUser = TokenUtils.getCurrentUser();
+        if (currentUser == null) {
+            throw new ServiceException("401", "ログインしてください");
+        }
         LambdaQueryWrapper<Collect> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Collect::getUserId, TokenUtils.getCurrentUser().getId());
+        queryWrapper.eq(Collect::getUserId, currentUser.getId());
         List<Collect> collects = collectMapper.selectList(queryWrapper);
-        collects.stream().forEach(collect -> {
-            collect.setGoods(goodsMapper.selectById(collect.getGoodsId()));
-        });
-        return collects;
-    }
+        if (CollUtil.isEmpty(collects)) {
+            return new ArrayList<>();
+        }
 
+        // 优化：批量填充关联商品，并自动过滤掉已删除商品失效的数据，防止前端出现 NPE
+        Set<Integer> goodsIds = collects.stream().map(Collect::getGoodsId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Integer, Goods> goodsMap = CollUtil.isEmpty(goodsIds) ? Map.of() :
+                goodsMapper.selectBatchIds(goodsIds).stream().collect(Collectors.toMap(Goods::getId, g -> g));
+
+        List<Collect> validCollects = new ArrayList<>();
+        for (Collect collect : collects) {
+            Goods g = goodsMap.get(collect.getGoodsId());
+            if (g != null) {
+                collect.setGoods(g);
+                validCollects.add(collect);
+            }
+        }
+        return validCollects;
+    }
 }

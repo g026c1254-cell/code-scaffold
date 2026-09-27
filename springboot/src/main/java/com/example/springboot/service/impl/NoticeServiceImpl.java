@@ -55,6 +55,14 @@ public class NoticeServiceImpl implements INoticeService {
 
     @Override
     public void remove(Integer id) {
+        User currentUser = requireCurrentUser();
+        Notice existing = noticeMapper.selectById(id);
+        if (existing == null) {
+            return;
+        }
+        if (!isAdmin(currentUser) && !currentUser.getId().equals(existing.getUserId())) {
+            throw new ServiceException("403", "只能删除自己发布的公告");
+        }
         noticeMapper.deleteById(id);
     }
 

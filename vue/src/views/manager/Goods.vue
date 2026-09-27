@@ -1,45 +1,60 @@
 <template>
-  <div style="margin: 10px auto;min-height: 90vh;width: 70%">
-    <!--顶部+搜索框-->
-    <div style="display: flex;justify-content: space-between;align-items: center">
+  <div class="manager-goods-page">
+    <!-- 顶部+搜索框 -->
+    <div class="goods-header-bar">
       <div>
-        <h1 style="border-left: 5px solid #ff6700;padding-left: 7px;font-size: 22px;color:#303133;">人気商品</h1>
+        <h1 class="page-title">人気商品</h1>
       </div>
-      <div>
+      <div class="search-box-wrap">
         <input v-model='keyboard' type="text" placeholder="商品名を検索" class="search-input" @keyup.enter="loadGoods"/>
         <el-button class="search-button" @click="loadGoods">
-          <i class="search-icon">🔍</i>
+          <i class="el-icon-search"></i>
         </el-button>
       </div>
     </div>
 
-    <!--分类按钮-->
-    <div style="margin-top: 15px">
+    <!-- 分类按钮：完全透明无背景色风格 -->
+    <div class="category-filter-area">
       <div class="type-group">
-        <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">すべて</el-button>
-        <el-button type="primary" v-for="(category,index) in types" :key="index" :class="{ 'type-selected': selectedCategoryId === category.id }" @click="handleCategoryClick(category)">
-          {{ category.name }}
-        </el-button>
+        <button
+          type="button"
+          class="type-chip-btn"
+          :class="{ 'type-selected': selectedCategoryId === 0 }"
+          @click="handleAllClick">
+          すべて
+        </button>
+        <button
+          type="button"
+          class="type-chip-btn"
+          v-for="(category,index) in types"
+          :key="index"
+          :class="{ 'type-selected': selectedCategoryId === category.id }"
+          @click="handleCategoryClick(category)">
+          {{ displayTypeName(category.name) }}
+        </button>
       </div>
     </div>
+
     <div>
-      <el-row :gutter="20" v-if="goods.length > 0">
-        <el-col :span="6" v-for="(item,index) in goods" :key="index" style="margin-top: 10px">
+      <el-row :gutter="16" v-if="goods.length > 0">
+        <el-col :xs="12" :sm="8" :md="6" v-for="(item,index) in goods" :key="index" style="margin-top: 16px">
           <el-card :body-style="{ padding: '0px' }" class="card-item">
-            <img :src="item.cover" alt="" style="width: 100%;height: 200px">
-            <div style="padding: 10px">
-              <div style="margin-top: 3px;font-size: 13px">
+            <div class="goods-image-box">
+              <img :src="item.cover" alt="" class="goods-image">
+            </div>
+            <div class="goods-info-body">
+              <div class="goods-name-text">
                 {{item.name}}
               </div>
-              <div style="margin-top: 5px;font-size: 11px;color: #909399;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
-                {{item.descr}}
+              <div class="goods-descr-text">
+                {{ stripHtml(item.content || item.descr) }}
               </div>
-              <div style="display: flex;justify-content: space-between;align-items: center;margin-top: 10px">
-                <div style="font-size: 20px;color: #FFA500;font-weight: 600">
+              <div class="goods-price-row">
+                <div class="goods-price-value">
                   {{item.price}}円
                 </div>
               </div>
-              <div style="margin-top: 8px;color: #909399;font-size: 12px;">
+              <div class="goods-publisher-tag">
                 投稿者：{{ item.userName || '匿名ユーザー' }}
               </div>
               <el-button
@@ -68,8 +83,9 @@
     </div>
 
     <div v-if="goods.length == 0">
-    <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="商品がありません"></el-empty>    </div>
+      <el-empty :image-size="200" :image="require('@/assets/empty.svg')" description="商品がありません"></el-empty>
     </div>
+  </div>
 </template>
 
 <script>
@@ -91,13 +107,18 @@ export default {
     this.loadGoods()
   },
   methods:{
+    displayTypeName(name) {
+      if (!name) return ''
+      const key = 'category.' + name
+      const translated = this.$t(key)
+      return translated === key ? name : translated
+    },
     loadType(){
       this.$request.get('/type/selectAll').then(res => {
-        this.types = res.data
+        this.types = Array.isArray(res.data) ? res.data : []
       })
     },
     loadGoods(){
-      console.log(this.$route.query.selectedCategoryId)
       this.$request.get("/goods/selectPage/type", {
         params: {
           pageNum: this.pageNum,
@@ -106,8 +127,8 @@ export default {
           typeId: this.selectedCategoryId
         }
       }).then(res => {
-        this.goods = res.data?.records
-        this.total = res.data?.total
+        this.goods = res.data?.records || []
+        this.total = res.data?.total || 0
       })
     },
     handleAllClick() {
@@ -151,58 +172,195 @@ export default {
           }
         })
       }).catch(() => {})
+    },
+    stripHtml(value) {
+      const container = document.createElement('div')
+      container.innerHTML = value || ''
+      return (container.textContent || container.innerText || '').replace(/\s+/g, ' ').trim()
     }
   }
 }
 </script>
 
 <style scoped>
-.search-input{
-  padding: 14px 24px;
+.manager-goods-page {
+  padding: 8px 4px;
+  min-height: 85vh;
+}
+
+.goods-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-title {
+  border-left: 5px solid #ff8a3d;
+  padding-left: 10px;
+  font-size: 20px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.search-box-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 220px;
+  padding: 10px 14px;
   outline: none;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-size: 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 20px 0 0 20px;
+  font-size: 13px;
+  box-sizing: border-box;
+  background: #fff;
+  transition: border-color .2s ease;
 }
 
-.search-button{
-  padding: 14px 24px;
-  background: #ff6700;
-  border: none;
+.search-input:focus {
+  border-color: #ff8a3d;
 }
 
-/* 分类标签组容器（可选，优化间距） */
+.search-button {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ffa86b 0%, #ff7e29 100%);
+  border: none;
+  border-radius: 0 20px 20px 0;
+  color: #fff;
+  cursor: pointer;
+}
+
+.search-button:hover {
+  opacity: .92;
+}
+
+.category-filter-area {
+  margin-top: 16px;
+}
+
 .type-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-/* 选中状态样式 */
-.type-selected {
-  background-color: #ff6700 !important;
-  color: #fff !important;
-}
-
-/* 未选中状态 hover效果 */
-.type-group .el-button--primary:not(.type-selected):hover {
-  background-color: #ff6700 !important;
-  color: #fff !important;
-}
-
-/* 重置 ElementUI 主按钮默认样式 */
-.type-group .el-button--primary {
-  background-color: #fff;
-  border-color: #dcdfe6;
-  color: #606266;
-}
-
-.card-item:hover{
+/* 分类小模块去掉背景色 */
+.type-chip-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #fed7aa;
+  color: #64748b;
+  border-radius: 18px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transform: scale(1.03);
+  outline: none;
+  box-shadow: none !important;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.type-chip-btn:hover {
+  background: transparent !important;
+  border-color: #ff8a3d;
+  color: #ff8a3d;
+  transform: translateY(-1px);
+}
+
+.type-chip-btn.type-selected {
+  background: transparent !important;
+  border: 2px solid #ff8a3d !important;
+  color: #ea6b1f !important;
+  font-weight: 700 !important;
+}
+
+.card-item {
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, .8);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, .03);
+  transition: transform .25s ease, box-shadow .25s ease;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.card-item:hover {
+  cursor: pointer;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 126, 41, .15);
+}
+
+/* 等比缩小展示完整商品图片，绝不裁切 */
+.goods-image-box {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  overflow: hidden;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.goods-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  display: block;
+}
+
+.goods-info-body {
+  padding: 12px;
+}
+
+.goods-name-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goods-descr-text {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goods-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.goods-price-value {
+  font-size: 18px;
+  color: #ff7e29;
+  font-weight: 700;
+}
+
+.goods-publisher-tag {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 11px;
 }
 
 .delete-button {
   margin-top: 10px;
+  width: 100%;
+  border-radius: 8px;
 }
 </style>

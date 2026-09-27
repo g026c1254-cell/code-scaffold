@@ -1,45 +1,137 @@
+/* 根变量定义：淡橘色系（Soft Warm Orange） */
+:root {
+    --brand-primary: #ff8a3d;
+    --brand-hover: #ffa366;
+    --brand-active: #ea6b1f;
+    --brand-light: #fff7ed;
+    --brand-light-border: #fed7aa;
+    --brand-gradient: linear-gradient(135deg, #ffa86b 0%, #ff7e29 100%);
+    --brand-gradient-hover: linear-gradient(135deg, #ff9b57 0%, #f46c14 100%);
+    --brand-gradient-soft: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+}
+
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-size: 14px;
-    background: linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
-}
-
-.el-notification {
-    top: 78px !important;
+    background-color: #faf8f5;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-    color: #333;
     text-decoration: none;
 }
 
-.w-e-text img {
-    width: 100% !important;
+p {
+    margin: 0;
 }
 
-.card {
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+.clear {
+    clear: both;
 }
 
-.line1 {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* 按钮微交互动效 */
+.el-button {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.line2 {
-    word-break: break-all;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* 超出几行省略 */
-    overflow: hidden;
+.el-button:hover:not(.is-disabled) {
+    transform: translateY(-1px);
+}
+
+.el-button:active:not(.is-disabled) {
+    transform: translateY(0);
+}
+
+/* 前台环境及通用弹窗中的主要按钮视觉 (淡橘色系) */
+.front-layout .el-button--primary:not(.is-plain):not(.is-link),
+.mobile-publish-dialog .el-dialog__footer .el-button--primary,
+.mobile-dialog .el-dialog__footer .el-button--primary {
+    background: var(--brand-gradient) !important;
+    border-color: transparent !important;
+    box-shadow: 0 3px 10px rgba(255, 126, 41, .25);
+    transition: all .2s ease;
+}
+
+.front-layout .el-button--primary:not(.is-plain):not(.is-link):hover,
+.mobile-publish-dialog .el-dialog__footer .el-button--primary:hover,
+.mobile-dialog .el-dialog__footer .el-button--primary:hover {
+    background: var(--brand-gradient-hover) !important;
+    box-shadow: 0 5px 14px rgba(255, 126, 41, .35);
+}
+
+.front-layout .el-button--primary:not(.is-plain):not(.is-link):active,
+.mobile-publish-dialog .el-dialog__footer .el-button--primary:active,
+.mobile-dialog .el-dialog__footer .el-button--primary:active {
+    background: var(--brand-active) !important;
+}
+
+/* 朴素按钮样式适配 */
+.front-layout .el-button--primary.is-plain {
+    color: var(--brand-primary) !important;
+    background: #fff7ed !important;
+    border-color: #fed7aa !important;
+}
+
+.front-layout .el-button--primary.is-plain:hover {
+    background: var(--brand-primary) !important;
+    color: #fff !important;
+    border-color: var(--brand-primary) !important;
+}
+
+/* 前台全局表单项获得焦点时的淡橘光晕 */
+.front-layout .el-input.is-active .el-input__inner,
+.front-layout .el-input__inner:focus,
+.mobile-publish-dialog .el-input__inner:focus,
+.mobile-dialog .el-input__inner:focus,
+.el-textarea__inner:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 3px rgba(255, 138, 61, .14) !important;
+}
+
+.goods-category-popper {
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+}
+
+.goods-category-popper .el-select-dropdown__wrap {
+    max-height: min(40vh, 280px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.goods-category-popper .el-select-dropdown__item {
+    height: auto;
+    min-height: 34px;
+    padding: 9px 14px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 商品分类小模块全局去背景色：透明、清爽轮廓风格 */
+.category-chip,
+.type-chip-btn,
+.type-group button,
+.type-group .el-button {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.category-chip:hover,
+.type-chip-btn:hover {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.category-chip.is-selected,
+.type-chip-btn.type-selected {
+    background: transparent !important;
+    background-color: transparent !important;
 }

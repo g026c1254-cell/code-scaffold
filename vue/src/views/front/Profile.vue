@@ -9,6 +9,7 @@
             action=""
             :http-request="uploadAvatar"
             :show-file-list="false"
+            accept="image/*"
             :before-upload="beforeAvatarUpload">
             <img v-if="user.avatar" :src="getImageUrl(user.avatar)" class="avatar" @error="handleImageError">
             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
@@ -203,8 +204,8 @@ export default {
 }
 
 .avatar-uploader >>> .el-upload:hover {
-  border-color: #ff6700;
-  box-shadow: 0 0 0 4px rgba(255, 103, 0, .1);
+  border-color: #ff8a3d;
+  box-shadow: 0 0 0 4px rgba(255, 138, 61, .15);
 }
 
 .avatar {
@@ -228,5 +229,41 @@ export default {
 .form-actions .el-button {
   min-width: 120px;
   margin: 0 6px 8px;
+}
+
+@media (max-width: 640px) {
+  .profile-page {
+    padding: 10px 8px 30px;
+    min-height: 0;
+  }
+
+  .profile-form {
+    padding: 12px 0 0;
+  }
+
+  .profile-form >>> .el-form-item__label {
+    float: none;
+    display: block;
+    width: 100% !important;
+    text-align: left;
+    padding: 0 0 6px;
+    line-height: 1.3;
+    font-size: 13px;
+  }
+
+  .profile-form >>> .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .form-actions .el-button {
+    width: 100%;
+    margin: 0 !important;
+  }
 }
 </style>

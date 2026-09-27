@@ -34,19 +34,19 @@ const routes = [
     component: () => import('../views/front/Front.vue'),
     redirect: '/front/home',
     children: [
-      { path: 'home', name: 'FrontHome', meta: { name: '首页信息' }, component: () => import('../views/front/Home.vue') },
-      { path: 'person', name: 'FrontPerson', meta: { name: '个人中心', requiresAuth: true }, component: () => import('../views/front/Person.vue') },
-      { path: 'profile', name: 'FrontProfile', meta: { name: '个人资料', requiresAuth: true }, component: () => import('../views/front/Profile.vue') },
-      { path: 'password', name: 'Password', meta: { name: '修改密码', requiresAuth: true }, component: () => import('../views/front/Password.vue') },
+      { path: 'home', name: 'FrontHome', meta: { name: 'ホーム' }, component: () => import('../views/front/Home.vue') },
+      { path: 'person', name: 'FrontPerson', meta: { name: 'マイページ', requiresAuth: true }, component: () => import('../views/front/Person.vue') },
+      { path: 'profile', name: 'FrontProfile', meta: { name: '個人情報', requiresAuth: true }, component: () => import('../views/front/Profile.vue') },
+      { path: 'password', name: 'Password', meta: { name: 'パスワード変更', requiresAuth: true }, component: () => import('../views/front/Password.vue') },
       {path: 'goods', name: 'FrontGoods', meta: { name: '商品一覧' }, component: () => import('../views/front/Goods.vue')},
       {path: 'goodsDetail', name: 'GoodsDetail', meta: { name: '商品詳細' }, component: () => import('../views/front/GoodsDetail.vue')},
       {path: 'collect', name: 'Collect', meta: { name: 'お気に入り', requiresAuth: true }, component: () => import('../views/front/Collect.vue')},
       {path: 'orders', name: 'FrontOrders', meta: { name: '注文履歴', requiresAuth: true }, component: () => import('../views/front/Orders.vue')},
     ]
   },
-  { path: '/login', name: 'Login', meta: { name: '登录' }, component: () => import('../views/Login.vue') },
-  { path: '/register', name: 'Register', meta: { name: '注册' }, component: () => import('../views/Register.vue') },
-  { path: '*', name: 'page-404', meta: { name: '无法访问' }, component: () => import('../views/404.vue')},
+  { path: '/login', name: 'Login', meta: { name: 'ログイン' }, component: () => import('../views/Login.vue') },
+  { path: '/register', name: 'Register', meta: { name: '新規登録' }, component: () => import('../views/Register.vue') },
+  { path: '*', name: 'page-404', meta: { name: 'ページが見つかりません' }, component: () => import('../views/404.vue')},
 ]
 
 const router = new VueRouter({

@@ -64,6 +64,26 @@
       <router-view ref="child" @update:user="updateUser" />
     </div>
 
+    <!-- 移动端专属底部导航栏 (Mobile Bottom TabBar) -->
+    <nav class="mobile-bottom-bar">
+      <div class="mobile-tab-item" :class="{ 'active': $route.path === '/front/home' }" @click="goPage('/front/home')">
+        <i class="el-icon-s-home"></i>
+        <span>{{ $t('nav.home') }}</span>
+      </div>
+      <div class="mobile-tab-item" :class="{ 'active': $route.path === '/front/goods' }" @click="goPage('/front/goods')">
+        <i class="el-icon-s-goods"></i>
+        <span>{{ $t('nav.goods') }}</span>
+      </div>
+      <div class="mobile-tab-item" :class="{ 'active': $route.path === '/front/orders' }" @click="handleProtectedNav('/front/orders')">
+        <i class="el-icon-s-order"></i>
+        <span>{{ $t('common.orders') }}</span>
+      </div>
+      <div class="mobile-tab-item" :class="{ 'active': $route.path === '/front/person' || $route.path === '/front/profile' }" @click="handleProtectedNav('/front/person')">
+        <i class="el-icon-user-solid"></i>
+        <span>{{ $t('nav.person') }}</span>
+      </div>
+    </nav>
+
     <Footer />
   </div>
 </template>
@@ -109,6 +129,19 @@ export default {
       if (this.$route.path !== path) {
         this.$router.push(path)
       }
+    },
+    handleProtectedNav(path) {
+      if (!this.user.username) {
+        this.$confirm('この機能を利用するにはログインが必要です。ログインページに移動しますか？', 'ログイン案内', {
+          confirmButtonText: 'ログイン',
+          cancelButtonText: 'キャンセル',
+          type: 'info'
+        }).then(() => {
+          this.$router.push('/login')
+        }).catch(() => {})
+        return
+      }
+      this.goPage(path)
     },
     updateUser() {
       this.user = JSON.parse(localStorage.getItem('user') || '{}')   // 重新获取下用户的最新信息

@@ -1,7 +1,7 @@
 <template>
   <div class="footer">
     <div class="copyright">
-      <p>© 2025 桑都安 - SOUTOYASU - | 八王子学生リユース</p>
+      <p>© 2025 桑都安 | 日本工学院　羅尭夫</p>
     </div>
   </div>
 </template>

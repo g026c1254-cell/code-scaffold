@@ -44,7 +44,7 @@
       <el-empty v-else :description="$t('common.noNotice')"></el-empty>
     </section>
 
-    <el-dialog :title="$t('common.publishNotice')" :visible.sync="noticeDialogVisible" width="460px" :close-on-click-modal="false">
+    <el-dialog class="mobile-publish-dialog notice-publish-dialog" :title="$t('common.publishNotice')" :visible.sync="noticeDialogVisible" width="460px" :close-on-click-modal="false">
       <el-form ref="noticeForm" :model="noticeForm" :rules="noticeRules" label-width="80px">
         <el-form-item :label="$t('common.title')" prop="name">
           <el-input v-model="noticeForm.name" maxlength="100" show-word-limit :placeholder="$t('common.title')"></el-input>
@@ -67,15 +67,25 @@
       </div>
     </el-dialog>
 
-    <el-dialog :title="$t('common.publishProduct')" :visible.sync="goodsDialogVisible" width="560px" :close-on-click-modal="false">
+    <el-dialog class="mobile-publish-dialog goods-publish-dialog" :title="$t('common.publishProduct')" :visible.sync="goodsDialogVisible" width="560px" :close-on-click-modal="false">
       <el-form ref="goodsForm" :model="goodsForm" :rules="goodsRules" label-width="90px">
         <el-form-item :label="$t('common.productName')" prop="name">
           <el-input v-model="goodsForm.name" maxlength="100" :placeholder="$t('common.productName')"></el-input>
         </el-form-item>
-        <el-form-item :label="$t('common.productCategory')" prop="typeId">
-          <el-select v-model="goodsForm.typeId" :placeholder="$t('common.productCategory')" style="width: 100%">
-            <el-option v-for="type in types" :key="type.id" :label="displayTypeName(type.name)" :value="type.id"></el-option>
-          </el-select>
+        <el-form-item :label="$t('common.productCategory')" prop="typeId" class="category-form-item">
+          <div class="category-chips-grid">
+            <div
+              v-for="type in types"
+              :key="type.id"
+              class="category-chip"
+              :class="{ 'is-selected': goodsForm.typeId === type.id }"
+              @click="handleSelectCategory(type.id)"
+            >
+              <i class="el-icon-check check-mark" v-if="goodsForm.typeId === type.id"></i>
+              <span class="chip-label">{{ displayTypeName(type.name) }}</span>
+            </div>
+          </div>
+          <el-input v-model="goodsForm.typeId" style="display: none;"></el-input>
         </el-form-item>
         <el-form-item :label="$t('common.price')" prop="price">
           <el-input-number v-model="goodsForm.price" :min="0.01" :precision="2" :step="1" controls-position="right" style="width: 100%"></el-input-number>
@@ -83,26 +93,48 @@
         <el-form-item :label="$t('common.stock')" prop="store">
           <el-input-number v-model="goodsForm.store" :min="1" :step="1" controls-position="right" style="width: 100%"></el-input-number>
         </el-form-item>
-        <el-form-item :label="$t('common.productImage')" prop="cover">
-          <el-upload
-              action=""
-              :http-request="uploadGoodsCover"
-              :show-file-list="false"
-              :before-upload="beforeGoodsCoverUpload">
-            <img v-if="goodsForm.cover" :src="getImageUrl(goodsForm.cover)" class="goods-cover-preview">
-            <i v-else class="el-icon-plus goods-cover-uploader"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item :label="$t('common.description')" prop="descr">
-          <div class="goods-editor">
-            <Toolbar :editor="editor" :defaultConfig="toolbarConfig" mode="default" />
-            <Editor
-              v-model="goodsForm.content"
-              :defaultConfig="editorConfig"
-              mode="default"
-              @onCreated="onEditorCreated"
-            />
+        <el-form-item label="商品画像" prop="cover">
+          <div class="goods-upload-box">
+            <el-upload
+                action=""
+                :http-request="uploadGoodsCover"
+                :show-file-list="false"
+                accept="image/*"
+                :before-upload="beforeGoodsCoverUpload">
+              <div v-if="goodsForm.cover" class="cover-preview-wrapper">
+                <img :src="getImageUrl(goodsForm.cover)" class="goods-cover-preview">
+                <div class="cover-overlay">
+                  <i class="el-icon-camera"></i>
+                  <span>画像を変更</span>
+                </div>
+              </div>
+              <div v-else class="upload-placeholder-card">
+                <i class="el-icon-upload upload-icon"></i>
+                <div class="upload-tip-text">クリックして商品画像をアップロード</div>
+                <div class="upload-sub-tip">JPG / PNG / WEBP形式対応</div>
+              </div>
+            </el-upload>
           </div>
+        </el-form-item>
+        <el-form-item label="商品説明" prop="descr">
+          <el-input
+            type="textarea"
+            :rows="4"
+            v-model="goodsForm.descr"
+            maxlength="1000"
+            show-word-limit
+            placeholder="商品の状態（キズ・汚れの有無）、使用期間、サイズ、付属品などを詳しく記入してください"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="購入注意事項" prop="purchaseNotice">
+          <el-input
+            type="textarea"
+            :rows="3"
+            v-model="goodsForm.purchaseNotice"
+            maxlength="500"
+            show-word-limit
+            placeholder="例：八王子キャンパス内での手渡し希望、平日の夕方対応可能、即購入OK、返品不可など"
+          ></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -184,7 +216,8 @@ export default {
           uploadImage: {
             server: '',
             fieldName: 'file',
-            headers: {}
+            headers: {},
+            allowedFileTypes: ['image/*']
           }
         }
       },
@@ -198,7 +231,7 @@ export default {
         price: [{ required: true, message: '商品価格を入力', trigger: 'change' }],
         cover: [{ required: true, message: '商品画像をアップロード', trigger: 'change' }]
       },
-      activeNames: [0],
+      activeNames: [],
       carouselHeight: '440px',
       carouselTouchStartX: 0
     }
@@ -348,8 +381,16 @@ export default {
         })
       })
     },
+    handleSelectCategory(id) {
+      this.goodsForm.typeId = id
+      this.$nextTick(() => {
+        if (this.$refs.goodsForm) {
+          this.$refs.goodsForm.validateField('typeId')
+        }
+      })
+    },
     openGoodsDialog() {
-      this.goodsForm = { name: '', typeId: null, price: 0, store: 1, cover: '', descr: '', content: '' }
+      this.goodsForm = { name: '', typeId: null, price: undefined, store: 1, cover: '', descr: '', purchaseNotice: '', content: '' }
       this.goodsDialogVisible = true
       this.loadType()
       this.$nextTick(() => this.$refs.goodsForm && this.$refs.goodsForm.clearValidate())
@@ -378,13 +419,19 @@ export default {
     submitGoods() {
       this.$refs.goodsForm.validate(valid => {
         if (!valid) return
+        let combinedContent = this.goodsForm.descr || ''
+        if (this.goodsForm.purchaseNotice) {
+          combinedContent += '\n<!--PURCHASE_NOTICE_START-->\n' + this.goodsForm.purchaseNotice
+        }
         const form = Object.assign({}, this.goodsForm, {
-          descr: this.stripHtml(this.goodsForm.content) || this.goodsForm.descr
+          descr: this.goodsForm.descr,
+          content: combinedContent
         })
         this.$request.post('/goods/add', form).then(res => {
           if (res.code === '200') {
             this.$message.success('商品を出品しました')
             this.goodsDialogVisible = false
+            this.loadTimeGoods()
           } else {
             this.$message.error(res.msg || '商品の出品に失敗しました')
           }
@@ -482,7 +529,7 @@ export default {
 }
 
 .type-item:hover{
-  color: #ea580c;
+  color: #ff8a3d;
   background: #fff7ed;
   transform: translateX(3px);
 }
@@ -494,7 +541,7 @@ export default {
 }
 
 .type-item:hover i{
-  color: #ea580c;
+  color: #ff8a3d;
   transform: translateX(2px);
 }
 
@@ -533,7 +580,7 @@ export default {
   width: 4px;
   height: 28px;
   border-radius: 4px;
-  background: linear-gradient(180deg, #ff5500, #f59e0b);
+  background: linear-gradient(180deg, #ff8a3d, #ffa366);
 }
 
 .notice-heading .section-title {
@@ -554,14 +601,14 @@ export default {
 .notice-primary-button {
   border: none;
   color: #fff;
-  background: linear-gradient(90deg, #f97316, #f59e0b);
+  background: linear-gradient(135deg, #ffa86b, #ff7e29);
 }
 
 .notice-primary-button:hover,
 .notice-primary-button:focus {
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(245, 158, 11, .25);
+  box-shadow: 0 8px 16px rgba(255, 126, 41, .25);
 }
 
 .notice-secondary-button {
@@ -572,8 +619,8 @@ export default {
 
 .notice-secondary-button:hover,
 .notice-secondary-button:focus {
-  color: #ea580c;
-  border-color: #fdba74;
+  color: #ff8a3d;
+  border-color: #fed7aa;
   background: #fff7ed;
 }
 
@@ -607,8 +654,8 @@ export default {
   flex: 0 0 auto;
   padding: 4px 8px;
   border-radius: 6px;
-  color: #c2410c;
-  background: #fff7ed;
+  color: #475569;
+  background: #f1f5f9;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -618,7 +665,7 @@ export default {
   padding: 3px 8px;
   border: 1px solid #fed7aa;
   border-radius: 999px;
-  color: #ea580c;
+  color: #ff8a3d;
   font-size: 11px;
 }
 
@@ -721,7 +768,7 @@ export default {
 }
 
 .section-title-accent {
-  border-left: 5px solid #ff6700;
+  border-left: 5px solid #ff8a3d;
   padding-left: 10px;
   margin-bottom: 0;
 }
@@ -734,7 +781,8 @@ export default {
   display: block;
   width: 100%;
   height: 200px;
-  object-fit: cover;
+  object-fit: contain !important;
+  background: #ffffff;
 }
 
 .goods-content {
@@ -764,7 +812,7 @@ export default {
 }
 
 .goods-price {
-  color: #ff6700;
+  color: #ff7e29;
   font-size: 20px;
   font-weight: 700;
 }
@@ -873,7 +921,68 @@ export default {
   }
 }
 
+.category-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-chip:hover {
+  border-color: #ff8a3d;
+  color: #ff8a3d;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.category-chip.is-selected {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 2px solid #ff8a3d !important;
+  color: #ea6b1f;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+
+.category-chip .check-mark {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ff8a3d;
+}
+
 @media (max-width: 520px) {
+  .category-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .category-chip {
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 13px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
   .notice-heading,
   .section-heading {
     flex-direction: column;
@@ -892,5 +1001,150 @@ export default {
   .section-title {
     font-size: 18px;
   }
+
+  .mobile-publish-dialog {
+    width: calc(100% - 24px) !important;
+    max-width: 520px;
+    margin: 10vh auto 0 !important;
+  }
+
+  .mobile-publish-dialog >>> .el-dialog {
+    display: flex;
+    flex-direction: column;
+    max-height: 82vh;
+    overflow: hidden;
+    border-radius: 14px;
+  }
+
+  .mobile-publish-dialog >>> .el-dialog__header {
+    flex: 0 0 auto;
+    padding: 18px 18px 12px;
+  }
+
+  .mobile-publish-dialog >>> .el-dialog__body {
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 12px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-publish-dialog >>> .el-dialog__footer {
+    flex: 0 0 auto;
+    padding: 10px 16px 16px;
+  }
+
+  .mobile-publish-dialog >>> .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .mobile-publish-dialog >>> .el-form-item__label {
+    float: none;
+    display: block;
+    width: 100% !important;
+    padding: 0 0 5px;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  .mobile-publish-dialog >>> .el-form-item__content {
+    margin-left: 0 !important;
+    line-height: normal;
+  }
+
+  .mobile-publish-dialog >>> .el-dialog__footer .el-button {
+    min-width: 96px;
+    margin: 0 0 0 6px;
+  }
+
+  .notice-publish-dialog >>> .notice-editor,
+  .goods-publish-dialog >>> .goods-editor {
+    max-width: 100%;
+  }
+
+  .mobile-publish-dialog >>> .w-e-toolbar {
+    flex-wrap: wrap;
+    overflow: hidden;
+  }
+
+  .mobile-publish-dialog >>> .w-e-text-container {
+    min-height: 140px;
+    max-height: 32vh;
+    overflow-y: auto;
+  }
+
+  .goods-publish-dialog >>> .el-input-number {
+    width: 100% !important;
+  }
+
+  .goods-publish-dialog >>> .el-upload {
+    max-width: 100%;
+  }
 }
+
+.goods-upload-box {
+  width: 100%;
+}
+.cover-preview-wrapper {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #fed7aa;
+  cursor: pointer;
+}
+.cover-preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+.upload-placeholder-card {
+  width: 100%;
+  max-width: 320px;
+  height: 110px;
+  border: 2px dashed #fed7aa;
+  border-radius: 12px;
+  background: #fff7ed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.upload-placeholder-card:hover {
+  border-color: #ff8a3d;
+  background: #ffedd5;
+}
+.upload-icon {
+  font-size: 28px;
+  color: #ff8a3d;
+  margin-bottom: 4px;
+}
+.upload-tip-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ea6b1f;
+}
+.upload-sub-tip {
+  font-size: 11px;
+  color: #9a3412;
+  margin-top: 2px;
+}
+
 </style>
