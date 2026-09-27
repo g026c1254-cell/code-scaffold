@@ -6,7 +6,7 @@
           <div class="front-header-left">
             <img src="@/assets/logo.svg" alt="桑都安">
             <div class="brand-copy">
-              <div class="title">桑都安 <span>- SOUTOYASU -</span></div>
+              <div class="title">桑都安 <span class="brand-title-extra">- SOUTOYASU -</span></div>
               <div class="brand-subtitle">八王子学生リユース</div>
             </div>
           </div>
@@ -16,20 +16,21 @@
           <div @click="goPage(item.path)" class="menu-item" v-for="item in menuList" :key="item.key" :class="{'menu-item-active' : item.path === $route.path }">{{ $t('nav.' + item.key) }}</div>
         </div>
 
+        <!-- 搜索栏：手机端大幅缩小并置于右上角头像左侧 -->
         <form class="header-search" @submit.prevent="searchGoods">
           <el-input
               v-model="searchKeyword"
               class="header-search-input"
               clearable
               prefix-icon="el-icon-search"
-              :placeholder="$t('common.searchProducts')">
+              :placeholder="searchPlaceholder">
           </el-input>
         </form>
 
         <div class="front-header-right">
           <div v-if="!user.username" class="front-header-right-button">
-            <el-button type="primary" plain @click="$router.push('/login')">{{ $t('nav.login') }}</el-button>
-            <el-button type="success" plain @click="$router.push('/register')">{{ $t('nav.register') }}</el-button>
+            <el-button type="primary" plain size="small" @click="$router.push('/login')">{{ $t('nav.login') }}</el-button>
+            <el-button type="success" plain size="small" @click="$router.push('/register')">{{ $t('nav.register') }}</el-button>
           </div>
           <!-- 登录展示 -->
           <div v-else class="front-user-area">
@@ -100,11 +101,17 @@ export default {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       searchKeyword: '',
+      isMobile: typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
       menuList: [
         {key: "home", path: '/front/home'},
         {key: "goods", path: '/front/goods'},
         {key: "person", path: '/front/person'},
       ],
+    }
+  },
+  computed: {
+    searchPlaceholder() {
+      return this.isMobile ? '検索' : this.$t('common.searchProducts')
     }
   },
   created() {
@@ -115,6 +122,17 @@ export default {
     }
     if(typeof this.user.username === 'undefined'){
       this.menuList = this.menuList.filter(item => item.key === "home");
+    }
+  },
+  mounted() {
+    this.handleResize = () => {
+      this.isMobile = window.innerWidth <= 768
+    }
+    window.addEventListener('resize', this.handleResize)
+  },
+  beforeDestroy() {
+    if (this.handleResize) {
+      window.removeEventListener('resize', this.handleResize)
     }
   },
   methods: {
@@ -144,7 +162,7 @@ export default {
       this.goPage(path)
     },
     updateUser() {
-      this.user = JSON.parse(localStorage.getItem('user') || '{}')   // 重新获取下用户的最新信息
+      this.user = JSON.parse(localStorage.getItem('user') || '{}')
     },
     logout() {
       localStorage.removeItem("user");
@@ -163,5 +181,4 @@ export default {
 
 <style scoped>
 @import "@/assets/css/front.css";
-
 </style>

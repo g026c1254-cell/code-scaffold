@@ -2,7 +2,7 @@
 .manager-container {
     background-color: #faf8f5;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 /* 顶部导航栏：清爽优雅的白色卡片风格，配合微边框与轻柔阴影 */
@@ -15,31 +15,48 @@
     height: 64px;
     padding: 0 16px;
     box-sizing: border-box;
+    position: relative;
+    z-index: 100;
+}
+
+/* 移动端汉堡菜单按钮：PC端隐藏 */
+.mobile-menu-btn {
+    display: none;
+    font-size: 22px;
+    color: #ff8a3d;
+    cursor: pointer;
+    padding: 6px;
+    margin-right: 8px;
+    border-radius: 8px;
+    transition: background-color .2s;
+}
+
+.mobile-menu-btn:hover {
+    background-color: #fff7ed;
 }
 
 /* 左侧 Logo 与系统名称 */
 .manager-header-left {
-    width: 210px;
-    height: 64px;
     display: flex;
     align-items: center;
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .manager-header-left img {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     object-fit: contain;
 }
 
 .manager-header-left .title {
-    flex: 1;
     margin-left: 10px;
     font-size: 17px;
     font-weight: 700;
     color: #1e293b;
     letter-spacing: .02em;
+    white-space: nowrap;
 }
 
 /* 顶部中间区域：面包屑导航 */
@@ -71,6 +88,8 @@
     align-items: center;
     gap: 12px;
     justify-content: flex-end;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .manager-header-right .avatar {
@@ -128,6 +147,7 @@
     background: #ffffff;
     border-right: 1px solid rgba(226, 232, 240, .8);
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 /* 侧边栏菜单样式 */
@@ -201,12 +221,34 @@
     padding-left: 48px !important;
 }
 
+/* 移动端抽屉菜单顶部 */
+.drawer-menu-header {
+    display: flex;
+    align-items: center;
+    padding: 18px 16px;
+    border-bottom: 1px solid rgba(226, 232, 240, .8);
+    background: #faf8f5;
+}
+
+.drawer-menu-header img {
+    width: 28px;
+    height: 28px;
+}
+
+.drawer-title {
+    margin-left: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
 /* 右侧内容工作区 */
 .manager-main-right {
     flex: 1;
     width: 0;
     padding: 16px 20px;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* 卡片、搜索区与表格卡片：现代 12px 圆角与柔和投影 */
@@ -270,7 +312,6 @@
     font-size: 13px;
     color: #334155;
     border-radius: 8px;
-    overflow: hidden;
 }
 
 /* 分页组件激活颜色（淡橘色） */
@@ -287,4 +328,92 @@
 .manager-container .el-input__inner:focus {
     border-color: #ff8a3d !important;
     box-shadow: 0 0 0 3px rgba(255, 138, 61, .14) !important;
+}
+
+/* ================== 移动端专门优化 (@media (max-width: 768px)) ================== */
+@media (max-width: 768px) {
+    /* 汉堡按钮显示 */
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .manager-header {
+        height: 54px;
+        padding: 0 10px;
+    }
+
+    .manager-header-left img {
+        width: 26px;
+        height: 26px;
+    }
+
+    .manager-header-left .title {
+        font-size: 14px;
+        margin-left: 6px;
+    }
+
+    /* 手机端隐藏面包屑，避免空间拥挤 */
+    .manager-header-center {
+        display: none;
+    }
+
+    /* 手机端管理员名称隐藏文字，只留头像 */
+    .profile-name-text {
+        display: none;
+    }
+
+    .manager-header-right .avatar {
+        padding: 2px 6px;
+    }
+
+    .manager-header-right .avatar img {
+        width: 28px;
+        height: 28px;
+        margin-right: 2px;
+    }
+
+    /* 手机端隐藏固定左侧菜单，释放全屏宽度给内容工作区 */
+    .manager-main-left {
+        display: none;
+    }
+
+    .manager-main-right {
+        padding: 8px 6px;
+        width: 100%;
+    }
+
+    /* 手机端表格与卡片自适应横向滑动，防止内容溢出 */
+    .manager-main-right .search,
+    .manager-main-right .operation,
+    .manager-main-right .table,
+    .manager-main-right .el-card {
+        padding: 10px 8px !important;
+        margin-bottom: 8px !important;
+        border-radius: 8px !important;
+    }
+
+    .manager-main-right .table,
+    .manager-main-right .el-card {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 手机端搜索栏中的控件弹性排布 */
+    .manager-main-right .search .el-input {
+        width: 100% !important;
+        margin: 0 0 6px 0 !important;
+    }
+
+    .manager-main-right .search .el-button,
+    .manager-main-right .operation .el-button {
+        margin: 2px 4px 2px 0 !important;
+        font-size: 12px !important;
+        padding: 7px 12px !important;
+    }
+
+    /* 对话框手机端占满 */
+    .manager-container .el-dialog {
+        width: 92% !important;
+        margin-top: 10vh !important;
+    }
 }

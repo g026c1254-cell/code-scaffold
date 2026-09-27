@@ -128,12 +128,16 @@
     height: 38px;
     border-radius: 50%;
     margin-right: 8px;
-    border: 2px solid #fed7aa;
 }
 
-.front-header-dropdown i {
-    font-size: 12px;
-    color: #94a3b8;
+.front-header-dropdown .profile-trigger {
+    padding: 2px;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.front-header-dropdown .profile-trigger:hover {
+    transform: scale(1.05);
 }
 
 .front-header-right-button {
@@ -156,14 +160,23 @@
         padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     }
 
+    .header {
+        height: auto;
+    }
+
+    /* 移动端 Header 单行优雅通透排布 */
     .front-header {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
         width: 100%;
-        min-height: 0;
-        padding: 10px 14px;
+        height: 54px;
+        min-height: 54px;
+        line-height: 1;
+        padding: 0 10px;
         box-sizing: border-box;
-        line-height: 1.2;
+        gap: 6px;
     }
 
     .front-header-left {
@@ -172,37 +185,112 @@
         width: auto;
         min-width: 0;
         padding-left: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .front-header-left img {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
     }
 
     .front-header-left .title {
         display: block;
         overflow: hidden;
-        font-size: 16px;
+        font-size: 14px;
+        font-weight: 700;
         text-overflow: ellipsis;
         white-space: nowrap;
+        line-height: 1.2;
+    }
+
+    .front-header-left .brand-title-extra {
+        display: none !important;
     }
 
     .brand-copy {
         min-width: 0;
-        margin-left: 8px;
+        margin-left: 6px;
     }
 
     .brand-subtitle {
-        font-size: 10px;
-        letter-spacing: .02em;
+        font-size: 9px;
+        letter-spacing: .01em;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 手机端首页的搜索栏：缩小并且大幅度减少宽度，放在右上角头像左侧 */
+    .header-search {
+        order: 2;
+        flex: 0 0 110px;
+        width: 110px;
+        min-width: 0;
+        margin: 0 0 0 auto;
+    }
+
+    .header-search-input {
+        width: 100% !important;
+    }
+
+    .header-search-input .el-input__inner {
+        height: 30px !important;
+        line-height: 30px !important;
+        font-size: 11px !important;
+        padding-left: 24px !important;
+        padding-right: 6px !important;
+        border-radius: 15px !important;
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .header-search-input .el-input__inner:focus {
+        border-color: var(--brand-primary) !important;
+        background-color: #fff !important;
+    }
+
+    .header-search-input .el-input__prefix {
+        left: 4px !important;
+        display: flex;
+        align-items: center;
+    }
+
+    .header-search-input .el-input__icon {
+        line-height: 30px !important;
+        font-size: 12px !important;
+        color: #94a3b8;
     }
 
     .front-header-right {
-        order: 2;
+        order: 3;
         flex: 0 0 auto;
+        margin-left: 0;
+        display: flex;
+        align-items: center;
     }
 
-    .header-search {
-        order: 3;
-        flex: 1 1 100%;
-        min-width: 0;
-        width: 100%;
-        margin: 10px 0 0;
+    .front-header-dropdown img {
+        width: 30px;
+        height: 30px;
+        margin-right: 2px;
+    }
+
+    .front-header-dropdown i {
+        font-size: 10px;
+    }
+
+    .front-header-right-button {
+        display: flex;
+        gap: 4px;
+    }
+
+    .front-header-right-button .el-button {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+        border-radius: 12px !important;
     }
 
     /* 移动端顶部菜单转由底部 TabBar 承载，保持头部整洁 */
@@ -249,6 +337,10 @@
 
     .mobile-tab-item.active {
         color: var(--brand-primary);
-        font-weight: 600;
+        font-weight: 700;
+    }
+
+    .mobile-tab-item.active i {
+        color: var(--brand-primary);
     }
 }
