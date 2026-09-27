@@ -72,9 +72,9 @@ export default {
     del(row){
       this.$request.delete('/collect/delete?id=' + row.id).then(res => {
         if (res.code == '200'){
-          this.$notify.success({title: '成功', message: '已取消收藏', showClose: false, duration: 2000});
+          this.$notify.success({title: '完了', message: 'お気に入りを解除しました', showClose: false, duration: 2000});
         } else {
-          this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+          this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
         }
         this.loadCollect()
       })

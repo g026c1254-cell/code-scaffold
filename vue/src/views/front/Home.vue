@@ -7,8 +7,8 @@
           <i class="el-icon-arrow-right"></i>
         </div>
       </div>
-      <div class="carousel-panel">
-        <el-carousel height="440px" :interval="10000">
+      <div class="carousel-panel" ref="carouselPanel" @touchstart="handleCarouselTouchStart" @touchend="handleCarouselTouchEnd">
+        <el-carousel ref="homeCarousel" :height="carouselHeight" :interval="10000">
           <el-carousel-item v-for="item in carousels" :key="item.id">
             <img :src="getImageUrl(item.cover)" class="carousel-img" @error="handleImageError" @click="goPage('/front/goods')" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
           </el-carousel-item>
@@ -179,7 +179,7 @@ export default {
       noticeEditor: null,
       toolbarConfig: {},
       editorConfig: {
-        placeholder: '请输入商品说明',
+        placeholder: '商品説明を入力',
         MENU_CONF: {
           uploadImage: {
             server: '',
@@ -189,16 +189,18 @@ export default {
         }
       },
       noticeRules: {
-        name: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
-        content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
+        name: [{ required: true, message: 'お知らせタイトルを入力', trigger: 'blur' }],
+        content: [{ required: true, message: 'お知らせ内容を入力', trigger: 'blur' }]
       },
       goodsRules: {
-        name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
-        typeId: [{ required: true, message: '请选择商品分类', trigger: 'change' }],
-        price: [{ required: true, message: '请输入商品价格', trigger: 'change' }],
-        cover: [{ required: true, message: '请上传商品图片', trigger: 'change' }]
+        name: [{ required: true, message: '商品名を入力', trigger: 'blur' }],
+        typeId: [{ required: true, message: '商品カテゴリを選択', trigger: 'change' }],
+        price: [{ required: true, message: '商品価格を入力', trigger: 'change' }],
+        cover: [{ required: true, message: '商品画像をアップロード', trigger: 'change' }]
       },
-      activeNames: [0]
+      activeNames: [0],
+      carouselHeight: '440px',
+      carouselTouchStartX: 0
     }
   },
   created() {
@@ -207,10 +209,13 @@ export default {
     this.loadCarousel()
     this.loadTimeGoods()
     this.loadNotice()
+    this.updateCarouselHeight()
+    window.addEventListener('resize', this.updateCarouselHeight)
   },
   beforeDestroy() {
     if (this.editor) this.editor.destroy()
     if (this.noticeEditor) this.noticeEditor.destroy()
+    window.removeEventListener('resize', this.updateCarouselHeight)
   },
   methods: {
     configureEditor() {
@@ -231,7 +236,6 @@ export default {
       })
     },
     displayTypeName(name) {
-      if (this.$i18n.locale !== 'ja-JP') return name
       const categoryMap = {
         '零食': 'お菓子・食品',
         '饮料': '飲料・ドリンク',
@@ -244,6 +248,27 @@ export default {
         '美妆': 'コスメ・美容'
       }
       return categoryMap[name] || name
+    },
+    updateCarouselHeight() {
+      this.carouselHeight = window.innerWidth <= 520 ? '220px' : (window.innerWidth <= 768 ? '300px' : '440px')
+    },
+    handleCarouselTouchStart(event) {
+      if (event.touches && event.touches.length) {
+        this.carouselTouchStartX = event.touches[0].clientX
+      }
+    },
+    handleCarouselTouchEnd(event) {
+      if (!event.changedTouches || !event.changedTouches.length) return
+      const distance = event.changedTouches[0].clientX - this.carouselTouchStartX
+      if (Math.abs(distance) < 40 || !this.$refs.homeCarousel) return
+      const current = this.$refs.homeCarousel.activeIndex
+      if (distance < 0) {
+        this.$refs.homeCarousel.next()
+      } else if (current > 0) {
+        this.$refs.homeCarousel.prev()
+      } else {
+        this.$refs.homeCarousel.setActiveItem(this.carousels.length - 1)
+      }
     },
     toggleNotice(index) {
       const activeIndex = this.activeNames.indexOf(index)
@@ -288,7 +313,7 @@ export default {
     },
     goGoodsDetail(id){
       if (!id) {
-        this.$message.error('商品信息不存在')
+        this.$message.error('商品情報が見つかりません')
         return
       }
       this.$router.push({ name: 'GoodsDetail', query: { id } })
@@ -314,11 +339,11 @@ export default {
         }
         this.$request.post('/notice/add', this.noticeForm).then(res => {
           if (res.code === '200') {
-            this.$message.success('公告发布成功')
+            this.$message.success('お知らせを投稿しました')
             this.noticeDialogVisible = false
             this.loadNotice()
           } else {
-            this.$message.error(res.msg || '公告发布失败')
+            this.$message.error(res.msg || 'お知らせの投稿に失敗しました')
           }
         })
       })
@@ -331,7 +356,7 @@ export default {
     },
     beforeGoodsCoverUpload(file) {
       const isImage = /^image\//.test(file.type)
-      if (!isImage) this.$message.error('商品图片必须是图片格式')
+      if (!isImage) this.$message.error('商品画像を指定してください')
       return isImage
     },
     uploadGoodsCover(options) {
@@ -346,7 +371,7 @@ export default {
           this.goodsForm.cover = res.data
           options.onSuccess(res)
         } else {
-          options.onError(new Error(res.msg || '图片上传失败'))
+          options.onError(new Error(res.msg || '画像のアップロードに失敗しました'))
         }
       }).catch(options.onError)
     },
@@ -358,10 +383,10 @@ export default {
         })
         this.$request.post('/goods/add', form).then(res => {
           if (res.code === '200') {
-            this.$message.success('商品已提交上架')
+            this.$message.success('商品を出品しました')
             this.goodsDialogVisible = false
           } else {
-            this.$message.error(res.msg || '商品提交失败')
+            this.$message.error(res.msg || '商品の出品に失敗しました')
           }
         })
       })
@@ -772,19 +797,30 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .homeContainer {
+    width: 94%;
+  }
+
   .carousel-margin {
+    flex-direction: column;
     gap: 10px;
   }
 
   .category-panel {
-    flex: 2.2;
+    order: 2;
+    padding: 8px 4px;
   }
 
   .carousel-panel {
-    flex: 7.8;
+    order: 1;
+    width: 100%;
   }
 
   .type-item {
+    display: inline-flex;
+    width: calc(50% - 24px);
+    margin: 3px 8px;
+    box-sizing: border-box;
     padding: 0 10px;
     font-size: 13px;
   }
@@ -817,6 +853,44 @@ export default {
   .notice-item-body {
     padding-left: 2px;
     padding-right: 2px;
+  }
+
+  .notice-item-title {
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .goods-image {
+    height: 150px;
+  }
+
+  .goods-content {
+    padding: 10px;
+  }
+
+  .goods-price {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 520px) {
+  .notice-heading,
+  .section-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .publish-actions {
+    justify-content: stretch;
+  }
+
+  .publish-actions .el-button {
+    flex: 1;
+    margin-left: 0;
+  }
+
+  .section-title {
+    font-size: 18px;
   }
 }
 </style>

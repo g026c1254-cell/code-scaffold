@@ -92,20 +92,6 @@
     object-fit: cover;
 }
 
-.manager-header-right .language-trigger {
-    border-radius: 18px;
-    border-color: rgba(255, 255, 255, .5);
-    background: transparent;
-    color: #fff;
-}
-
-.manager-header-right .language-trigger:hover,
-.manager-header-right .language-trigger:focus {
-    border-color: #fff;
-    background: rgba(255, 255, 255, .14);
-    color: #fff;
-}
-
 /* 后台系统表格设置 */
 .manager-main {
     display: flex;
@@ -339,4 +325,88 @@ img {
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
+}
+
+@media (max-width: 768px) {
+    .manager-header {
+        flex-wrap: wrap;
+        min-height: 60px;
+    }
+
+    .manager-header-left {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+        padding-left: 8px;
+    }
+
+    .manager-header-left .title {
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .manager-header-center {
+        order: 3;
+        flex: 0 0 100%;
+        min-height: 38px;
+        padding: 0 8px;
+        box-sizing: border-box;
+    }
+
+    .manager-header-right {
+        width: auto;
+        padding-right: 8px;
+        gap: 4px;
+    }
+
+    .manager-header-right .profile-name {
+        display: none;
+    }
+
+    .manager-header-right .avatar {
+        padding: 4px;
+    }
+
+    .manager-header-right .avatar img {
+        width: 34px;
+        height: 34px;
+        margin-right: 0;
+    }
+
+    .manager-main-left {
+        width: 54px;
+        min-width: 54px;
+    }
+
+    .manager-main-left .el-menu {
+        width: 54px;
+    }
+
+    .manager-main-left .el-submenu__title,
+    .manager-main-left .el-menu-item {
+        padding: 0 !important;
+        text-align: center;
+    }
+
+    .manager-main-left .el-submenu__title span,
+    .manager-main-left .el-menu-item span {
+        display: none;
+    }
+
+    .manager-main-right {
+        min-width: 0;
+        padding: 8px 6px;
+    }
+
+    .manager-main-right .search,
+    .manager-main-right .operation,
+    .manager-main-right .table {
+        overflow-x: auto;
+    }
+
+    .manager-main-right .table .el-table {
+        min-width: 680px;
+    }
 }

@@ -2,20 +2,20 @@
   <div class="container">
     <div class="content">
       <el-card class="password-card">
-        <div class="card-header">密码修改</div>
+        <div class="card-header">パスワード変更</div>
         <el-form ref="formRef" :model="user" :rules="rules" label-width="80px" class="password-form">
-          <el-form-item label="原始密码" prop="password">
-            <el-input show-password v-model="user.password" placeholder="请输入原始密码" clearable></el-input>
+          <el-form-item label="現在のパスワード" prop="password">
+            <el-input show-password v-model="user.password" placeholder="現在のパスワードを入力" clearable></el-input>
           </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input show-password v-model="user.newPassword" placeholder="新密码长度至少8位，包含字母和数字" clearable></el-input>
+          <el-form-item label="新しいパスワード" prop="newPassword">
+            <el-input show-password v-model="user.newPassword" placeholder="8文字以上、英字と数字を含むパスワード" clearable></el-input>
           </el-form-item>
-          <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input show-password v-model="user.confirmPassword" placeholder="请再次输入新密码" clearable></el-input>
+          <el-form-item label="パスワード確認" prop="confirmPassword">
+            <el-input show-password v-model="user.confirmPassword" placeholder="新しいパスワードを再入力" clearable></el-input>
           </el-form-item>
           <div class="form-actions">
-            <el-button type="warning" @click="resetForm">重置</el-button>
-            <el-button type="primary" @click="update">确认修改</el-button>
+            <el-button type="warning" @click="resetForm">リセット</el-button>
+            <el-button type="primary" @click="update">変更を確定</el-button>
           </div>
         </el-form>
       </el-card>
@@ -29,9 +29,9 @@ export default {
   data() {
     const validateConfirmPassword = (rule, value, callback) => {
       if (!value) {
-        callback(new Error('请输入确认密码'));
+        callback(new Error('確認用パスワードを入力してください'));
       } else if (value !== this.user.newPassword) {
-        callback(new Error('两次输入的密码不一致'));
+        callback(new Error('パスワードが一致しません'));
       } else {
         callback();
       }
@@ -39,13 +39,13 @@ export default {
 
     const validateNewPassword = (rule, value, callback) => {
       if (!value) {
-        callback(new Error('请输入新密码'));
+        callback(new Error('新しいパスワードを入力してください'));
       } else if (value.length < 8) {
-        callback(new Error('密码长度不能少于8位'));
+        callback(new Error('パスワードは8文字以上で入力してください'));
       } else if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-        callback(new Error('密码必须包含字母和数字'));
+        callback(new Error('パスワードには英字と数字を含めてください'));
       } else if (value === this.user.password) {
-        callback(new Error('新密码不能与原始密码相同'));
+        callback(new Error('新しいパスワードは現在のパスワードと異なるものにしてください'));
       } else {
         callback();
       }
@@ -58,7 +58,7 @@ export default {
         id: JSON.parse(localStorage.getItem("user")).id
       },
       rules: {
-        password: [{ required: true, message: '请输入原始密码', trigger: 'blur' }],
+        password: [{ required: true, message: '現在のパスワードを入力してください', trigger: 'blur' }],
         newPassword: [{ validator: validateNewPassword, required: true, trigger: 'blur' }],
         confirmPassword: [{ validator: validateConfirmPassword, required: true, trigger: 'blur' }]
       }
@@ -81,7 +81,7 @@ export default {
 
             const res = await this.$request.post('/user/password', submitData);
             if (res.code === '200') {
-              this.$notify.warning({title: '成功', message: '密码修改成功，请重新登录', showClose: false, duration: 2000});
+              this.$notify.warning({title: '完了', message: 'パスワードを変更しました。再度ログインしてください', showClose: false, duration: 2000});
 
               // 清除本地存储的用户信息，确保安全退出
               localStorage.removeItem('user');
@@ -91,10 +91,10 @@ export default {
                 this.$router.push('/login');
               }, 1500);
             } else {
-              this.$notify.error({message: res.msg || '修改失败，请稍后重试', showClose: false, duration: 2000});
+              this.$notify.error({message: res.msg || '変更に失敗しました。しばらくしてから再試行してください', showClose: false, duration: 2000});
             }
           } catch (error) {
-            this.$notify.error({message:'网络异常，请稍后重试', showClose: false, duration: 2000});
+            this.$notify.error({message:'ネットワークエラーが発生しました。しばらくしてから再試行してください', showClose: false, duration: 2000});
           }
         }
       });

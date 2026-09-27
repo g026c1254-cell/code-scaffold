@@ -1,37 +1,37 @@
 <template>
   <div class="login-container">
     <div class="left-section">
-      <h1 class="title">史上最简单脚手架</h1>
-      <p class="description">一款由 Spring Boot + Vue + Mybatis Plus 开发的前后端分离脚手架。</p>
-      <p class="descr">多角色登录，前后台页面，史上最简单、最方便，最易学的后台管理系统！</p>
-      <img src="../assets/login.svg" alt="登录插画" class="illustration" />
+      <h1 class="title">桑都安 - SOUTOYASU -</h1>
+      <p class="description">Spring Boot + Vue + MyBatis Plusで構築されたC2Cリユースプラットフォーム。</p>
+      <p class="descr">学生同士で安心して商品を売買できるサービスです。</p>
+      <img src="../assets/login.svg" alt="登録イラスト" class="illustration" />
     </div>
     <div class="right-section">
-      <h1 class="welcome-title">欢迎注册</h1>
+      <h1 class="welcome-title">新規登録</h1>
       <div class="login-type-wrapper">
-        <p class="login-type">账号密码注册</p>
+        <p class="login-type">アカウントを作成</p>
       </div>
       <el-form :model="user" :rules="rules" ref="registerRef" class="login-form">
         <el-form-item prop="username">
-          <el-input v-model="user.username" size="medium" placeholder="请输入账号" prefix-icon="el-icon-user"></el-input>
+          <el-input v-model="user.username" size="medium" placeholder="ユーザー名を入力" prefix-icon="el-icon-user"></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="user.password" size="medium" type="password" placeholder="请输入密码" prefix-icon="el-icon-lock" show-password></el-input>
+          <el-input v-model="user.password" size="medium" type="password" placeholder="パスワードを入力" prefix-icon="el-icon-lock" show-password></el-input>
         </el-form-item>
         <el-form-item prop="confirmPass">
-          <el-input prefix-icon="el-icon-lock" size="medium" show-password placeholder="请确认密码" v-model="user.confirmPass"></el-input>
+          <el-input prefix-icon="el-icon-lock" size="medium" show-password placeholder="パスワードを再入力" v-model="user.confirmPass"></el-input>
         </el-form-item>
         <el-form-item prop="role">
-          <el-select v-model="user.role" size="medium" placeholder="请选择角色" style="width: 100%">
-            <el-option label="用户" value="USER"></el-option>
+          <el-select v-model="user.role" size="medium" placeholder="アカウント種別を選択" style="width: 100%">
+            <el-option label="一般ユーザー" value="USER"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="success" class="login-btn" @click="register" style="background-color: darkseagreen">注 册</el-button>
+          <el-button type="success" class="login-btn" @click="register" style="background-color: darkseagreen">登録</el-button>
         </el-form-item>
 
         <div class="links">
-          <div style="margin-left: 10px"><a href="/login">返回登录</a></div>
+          <div style="margin-left: 10px"><a href="/login">ログインに戻る</a></div>
         </div>
       </el-form>
     </div>
@@ -46,9 +46,9 @@ export default {
   data() {
     const validatePassword = (rule, confirmPass, callback) => {
       if (confirmPass === '') {
-        callback(new Error('请确认密码'))
+        callback(new Error('パスワードを再入力'))
       } else if (confirmPass !== this.user.password) {
-        callback(new Error('两次输入的密码不一致'))
+        callback(new Error('パスワードが一致しません'))
       } else {
         callback()
       }
@@ -61,16 +61,16 @@ export default {
       },
       rules: {
         username: [
-          { required: true, message: '请输入账号', trigger: 'blur' },
+          { required: true, message: 'ユーザー名を入力', trigger: 'blur' },
         ],
         password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
+          { required: true, message: 'パスワードを入力', trigger: 'blur' },
         ],
         confirmPass: [
           { validator: validatePassword, trigger: 'blur' }
         ],
         role: [
-          { required: true, message: '请选择角色', trigger: 'blur' },
+          { required: true, message: 'アカウント種別を選択', trigger: 'blur' },
         ],
       }
     }
@@ -85,7 +85,7 @@ export default {
           this.$request.post('/register', user).then(res => {
             if (res.code === '200') {
               this.$router.push('/login')
-              this.$notify.success({title: '成功', message: '注册成功', showClose: false, duration: 2000});
+              this.$notify.success({title: '完了', message: '登録が完了しました', showClose: false, duration: 2000});
             } else {
               this.$notify.error({message: res.msg, showClose: false, duration: 2000});
             }

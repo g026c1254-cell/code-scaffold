@@ -1,7 +1,7 @@
 <template>
   <div class="footer">
     <div class="copyright">
-      <p>© 2025 电商平台 版权所有 | 京ICP备12345678号</p>
+      <p>© 2025 桑都安 - SOUTOYASU - | 八王子学生リユース</p>
     </div>
   </div>
 </template>

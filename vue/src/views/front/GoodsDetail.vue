@@ -109,10 +109,10 @@ export default {
       const data = {goodsId: this.goods.id}
       this.$request.post('/collect/add',data).then(res => {
         if (res.code == '200'){
-          this.$notify.success({title: '成功', message: '收藏成功', showClose: false, duration: 2000});
+          this.$notify.success({title: '完了', message: 'お気に入りに追加しました', showClose: false, duration: 2000});
           this.isCollect = true
         } else {
-          this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+          this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
           this.isCollect = false
         }
         this.loadGoods()
@@ -131,10 +131,10 @@ export default {
       }
       this.$request.post('/orders/add',data).then(res => {
         if (res.code == '200'){
-          this.$notify.success({title: '成功', message: '下单成功，请尽快支付', showClose: false, duration: 2000});
+          this.$notify.success({title: '完了', message: '注文を作成しました。お早めにお支払いください', showClose: false, duration: 2000});
           this.$router.push('/front/orders')
         } else {
-          this.$notify.error({title: '成功', message: res.msg, showClose: false, duration: 2000});
+          this.$notify.error({title: 'エラー', message: res.msg, showClose: false, duration: 2000});
         }
       })
     },

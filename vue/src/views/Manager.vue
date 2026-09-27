@@ -24,13 +24,6 @@
             <el-dropdown-item @click.native="logout">ログアウト</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
-        <el-dropdown class="language-dropdown" @command="changeLocale">
-          <el-button class="language-trigger" plain>{{ localeLabel }}<i class="el-icon-arrow-down"></i></el-button>
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item command="zh-CN">🇨🇳 中文</el-dropdown-item>
-            <el-dropdown-item command="ja-JP">🇯🇵 日本語</el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
       </div>
     </div>
 
@@ -83,7 +76,6 @@ export default {
   data() {
     return {
       user: JSON.parse(localStorage.getItem('user') || '{}'),
-      locale: this.$i18n.locale,
     }
   },
   mounted() {
@@ -99,16 +91,6 @@ export default {
       localStorage.removeItem('user')
       this.$router.push('/login')
     },
-    changeLocale(locale) {
-      this.$i18n.locale = locale
-      localStorage.setItem('locale', locale)
-      this.locale = locale
-    }
-  },
-  computed: {
-    localeLabel() {
-      return this.locale === 'ja-JP' ? '日本語' : '中文'
-    }
   }
 }
 </script>

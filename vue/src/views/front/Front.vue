@@ -57,13 +57,6 @@
             </el-dropdown>
           </div>
         </div>
-        <el-dropdown class="language-dropdown" @command="changeLocale">
-          <el-button class="language-trigger" plain>{{ localeLabel }}<i class="el-icon-arrow-down"></i></el-button>
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item command="zh-CN">🇨🇳 {{ $t('language.chinese') }}</el-dropdown-item>
-            <el-dropdown-item command="ja-JP">🇯🇵 {{ $t('language.japanese') }}</el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
       </div>
     </div>
 
@@ -86,7 +79,6 @@ export default {
   data () {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-      locale: this.$i18n.locale,
       searchKeyword: '',
       menuList: [
         {key: "home", path: '/front/home'},
@@ -125,11 +117,6 @@ export default {
       localStorage.removeItem("user");
       this.$router.push('/front/home')
     },
-    changeLocale(locale) {
-      this.$i18n.locale = locale
-      localStorage.setItem('locale', locale)
-      this.locale = locale
-    },
     searchGoods() {
       const keyword = this.searchKeyword.trim()
       this.$router.push({
@@ -138,11 +125,6 @@ export default {
       })
     }
   },
-  computed: {
-    localeLabel() {
-      return this.locale === 'ja-JP' ? '日本語' : '中文'
-    }
-  }
 }
 </script>
 

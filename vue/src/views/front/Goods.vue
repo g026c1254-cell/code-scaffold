@@ -3,10 +3,10 @@
     <!--顶部+搜索框-->
     <div class="goods-toolbar">
       <div>
-        <h1 class="page-title">热卖商品</h1>
+        <h1 class="page-title">人気商品</h1>
       </div>
       <div>
-        <input v-model='keyboard' type="text" placeholder="请输入搜索商品名称" class="search-input" @keyup.enter="loadGoods"/>
+        <input v-model='keyboard' type="text" placeholder="商品名を検索" class="search-input" @keyup.enter="loadGoods"/>
         <el-button class="search-button" @click="loadGoods">
           <i class="search-icon">🔍</i>
         </el-button>
@@ -16,7 +16,7 @@
     <!--分类按钮-->
     <div class="category-area">
       <div class="type-group">
-        <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">全部</el-button>
+        <el-button type="primary" :class="{ 'type-selected': selectedCategoryId === 0 }" @click="handleAllClick">すべて</el-button>
         <el-button type="primary" v-for="(category,index) in types" :key="index" :class="{ 'type-selected': selectedCategoryId === category.id }" @click="handleCategoryClick(category)">
           {{ category.name }}
         </el-button>
@@ -56,7 +56,7 @@
     </div>
 
     <div v-if="goods.length == 0">
-      <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="没有商品哟~"></el-empty>    </div>
+      <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="商品がありません"></el-empty>    </div>
   </div>
 </template>
 
@@ -88,7 +88,7 @@ export default {
   methods:{
     goDetail(id) {
       if (!id) {
-        this.$message.error('商品信息不存在')
+        this.$message.error('商品情報が見つかりません')
         return
       }
       this.$router.push({ name: 'GoodsDetail', query: { id } })

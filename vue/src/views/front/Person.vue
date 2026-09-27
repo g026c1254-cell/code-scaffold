@@ -529,4 +529,43 @@ export default {
   color: #ea580c;
 }
 
+@media (max-width: 700px) {
+  .form-container {
+    padding: 10px 6px 24px;
+  }
+
+  .account-sections {
+    width: 100%;
+  }
+
+  .account-card >>> .el-tabs__nav {
+    display: flex;
+    width: 100%;
+  }
+
+  .account-card >>> .el-tabs__item {
+    flex: 1;
+    padding: 0 8px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .activity-actions {
+    flex-direction: column;
+  }
+
+  .activity-actions .el-button {
+    width: 100%;
+  }
+
+  .activity-image {
+    height: 120px;
+  }
+
+  .account-card >>> .el-table {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
 </style>
