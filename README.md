@@ -1,47 +1,79 @@
-# ECプラットフォーム（Spring Boot × Vue.js フルスタックシステム）
+# 学生向けフリマ・ECプラットフォーム基盤 (Campus Marketplace)
 
-Spring Boot と Vue.js を用いた、前後端分離（SPA構成）アーキテクチャのECプラットフォームです。
-バックエンドAPI設計からフロントエンドのUI実装、データベースモデリング、さらにインフラ展開（Nginx / Linux環境構築）を見据えた開発を行っています。
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)]()
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)]()
+[![Vue.js](https://img.shields.io/badge/Vue.js-2%2F3-blue.svg)]()
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)]()
 
----
-
-## 1. システム概要
-* **開発目的**: フルスタック開発の流れを把握した上で、インフラエンジニアとして実務に直結する「Web/DBサーバーの構築・運用」「コンテナ化」「パフォーマンス最適化」の基盤となる実践的アプリケーションを構築。
-* **主要機能**:
-  * ユーザー認証（管理者・一般ユーザー権限分離、JWT/セッション制御）
-  * 商品一覧・カテゴリ別絞り込み・リアルタイム検索
-  * ショッピングカート・注文処理フロー
-  * 管理者ダッシュボード（EChartsによる売上・統計情報の可視化、ユーザー/商品/お知らせ管理）
+本プロジェクトは、学生間の不要品取引（フリマ）を円滑化することを目的とした、堅牢なWebアプリケーション基盤です。  
+単なる機能実装にとどまらず、**「実務を意識した保守性の高いバックエンド設計」**および**「Docker・Nginxを活用したコンテナ仮想化と自動デプロイ基盤」**に重点を置いて構築しています。
 
 ---
 
-## 2. 技術スタック（Technology Stack）
+## 📌 主な特徴と技術的なこだわり（アピールポイント）
 
-### フロントエンド（Front-End）
-* **Framework**: Vue.js (Vue CLI / SPA)
-* **UI ライブラリ**: Element UI
-* **通信・ルーティング**: Axios, Vue Router
-* **可視化**: ECharts
+### 1. インフラ・運用を意識したコンテナ仮想化（Docker & Nginx）
+* **マルチステージビルド・コンテナ化**: バックエンド（Spring Boot）およびフロントエンド（Vue.js）の各層に `Dockerfile` を用意し、イメージの軽量化と依存関係の隔離を実現。
+* **Nginxによるリバースプロキシ**: フロントエンド配信およびバックエンドAPIへのリバースプロキシルーティングを `nginx.conf` にて一括管理。
+* **一元管理（Docker Compose）**: データベース（MySQL）、フロントエンド、バックエンドを `docker-compose.yml` 経由でワンコマンド起動・環境構築が可能。
 
-### バックエンド（Back-End）
-* **Framework**: Spring Boot
-* **ORM / データアクセス**: MyBatis / Spring Data
-* **ビルドツール**: Maven
-* **言語 / ランタイム**: Java (JDK 17+)
+### 2. 堅牢で拡張性の高いバックエンドアーキテクチャ
+* **厳格なレイヤードアーキテクチャ**: `Controller` -> `Service` -> `Mapper` -> `Database` の責務分離を徹底。
+* **グローバル例外ハンドリング**: `@RestControllerAdvice` による統一例外処理基盤（`exception/`）を構築し、予期せぬエラー時もクライアントへ標準化されたJSONレスポンスを返却。
+* **共通レスポンス基盘**: `common/` パッケージにて汎用Resultオブジェクトやユーティリティを共通化し、API仕様の均一性を担保。
 
-### データベース & インフラ（Database & Infrastructure）
-* **RDBMS**: MySQL
-* **Web/リバースプロキシ**: Nginx（予定 / 検証中）
-* **プラットフォーム**: Linux (Ubuntu / AlmaLinux)
-* **構成管理・CI/CD**: Git / GitHub
+### 3. 多言語対応・管理画面を備えたフロントエンド
+* **国際化（i18n）**: `i18n/` を導入し、グローバル利用を想定した動的多言語切り替えに対応。
+* **権限分離（Front / Manager）**: 一般ユーザー向け取引画面（`front/`）と、管理者向けのシステム・商品・ユーザー管理画面（`manager/`）を独立設計。
 
 ---
 
-## 3. ディレクトリ構成
+## 🛠 技術スタック（Technology Stack）
+
+| レイヤー | 技術 / ツール | 役割 |
+| :--- | :--- | :--- |
+| **Infrastructure / DevOps** | **Docker / Docker Compose** | コンテナ仮想化・マルチコンテナオーケストレーション |
+| | **Nginx** | Webサーバ、リバースプロキシ、静的リソース配信 |
+| **Backend** | **Java 17 / Spring Boot** | コアAPIサービス・ビジネスロジック基盤 |
+| | **MyBatis / MySQL** | ORMデータマッピング・リレーショナルデータベース |
+| | **Maven** | 依存関係管理・ビルド自動化 |
+| **Frontend** | **Vue.js / Vue Router** | SPAフロントエンドUI・ルーティング管理 |
+| | **vue-i18n** | 多言語ローカライゼーション基盤 |
+| | **Axios** | 非同期HTTP通信 |
+
+---
+
+## 📂 ディレクトリ構成（Project Structure）
+
 ```text
 code-scaffold/
-├── springboot/          # バックエンドAPIサービス（RESTful API）
-├── vue/                 # フロントエンドSPAアプリケーション
-├── sql/                 # データベーススキーマおよび初期投入データ
-├── files/               # 静的アップロードファイルストレージ
-└── .gitignore           # Git管理除外設定
+├── .idea/                      # IDE設定ファイル
+├── files/                      # アップロードファイル・静的アセット保管
+├── sql/                        # データベース初期化DDL・DMLスクリプト
+├── springboot/                 # バックエンドAPIサービス（Spring Boot）
+│   ├── src/main/java/com/example/springboot/
+│   │   ├── common/             # 共通レスポンス・定数
+│   │   ├── controller/         # REST APIコントローラー層
+│   │   ├── entity/             # データベースエンティティ
+│   │   ├── exception/          # グローバル例外処理・エラーハンドリング
+│   │   ├── mapper/             # MyBatisマッパーインターフェース
+│   │   ├── service/            # 業務ロジック層（インターフェース / impl）
+│   │   └── utils/              # 共通ユーティリティクラス
+│   ├── src/main/resources/
+│   │   ├── mapper/             # MyBatis XMLマッピングファイル
+│   │   └── application.yml     # アプリケーション設定プロパティ
+│   ├── Dockerfile              # バックエンドビルド用Docker定義
+│   └── pom.xml                 # Maven構成ファイル
+├── vue/                        # フロントエンドSPA（Vue.js）
+│   ├── src/
+│   │   ├── assets/             # 静的スタイル・画像リソース
+│   │   ├── components/         # 共通UIコンポーネント
+│   │   ├── i18n/               # 多言語対応設定リソース
+│   │   ├── router/             # ルーティング設定
+│   │   └── views/
+│   │       ├── front/          # 一般ユーザー向けUI（商品閲覧・取引等）
+│   │       └── manager/        # 管理者向け管理コンソール（Login, 404, CRUD）
+│   ├── nginx.conf              # 本番配信用Nginxリバースプロキシ設定
+│   └── Dockerfile              # フロントエンドビルド・配信Docker定義
+└── docker-compose.yml          # 全サービス一括起動用オーケストレーション設定
