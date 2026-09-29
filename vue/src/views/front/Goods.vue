@@ -33,30 +33,31 @@
       </div>
     </div>
 
-    <!-- 商品网格列表：向前紧凑对齐，无散落空白 -->
+    <!-- 商品列表：Flex 弹性盒换行，从最左侧开始排，消除空白占位 -->
     <div>
-      <div v-if="goods.length > 0" class="goods-grid-wrapper">
+      <div v-if="validGoods.length > 0" class="goods-flex-container">
         <div
-          v-for="(item, index) in goods"
+          v-for="(item, index) in validGoods"
           :key="item.id || index"
-          class="card-item"
-          @click="goDetail(item.id)"
+          class="goods-flex-item"
         >
-          <!-- 商品封面图片容器：等比缩小显示完整商品，绝不裁剪 -->
-          <div class="goods-image-box">
-            <img :src="getImageUrl(item.cover)" @error="handleImageError" :alt="item.name" class="goods-image">
-          </div>
-          <div class="goods-content">
-            <div class="goods-name" :title="item.name">
-              {{ item.name }}
+          <div class="card-item" @click="goDetail(item.id)">
+            <!-- 商品封面图片容器：等比缩小显示完整商品，绝不裁剪 -->
+            <div class="goods-image-box">
+              <img :src="getImageUrl(item.cover)" @error="handleImageError" :alt="item.name" class="goods-image">
             </div>
-            <div class="goods-descr" :title="stripHtml(item.content || item.descr)">
-              {{ stripHtml(item.content || item.descr) || '' }}
-            </div>
-            <div class="goods-footer-row">
-              <div class="goods-price">{{ item.price }}円</div>
-              <div class="publisher-tag" :title="item.userName || $t('common.anonymous')">
-                <i class="el-icon-user"></i> {{ item.userName || $t('common.anonymous') }}
+            <div class="goods-content">
+              <div class="goods-name" :title="item.name">
+                {{ item.name }}
+              </div>
+              <div class="goods-descr" :title="stripHtml(item.content || item.descr)">
+                {{ stripHtml(item.content || item.descr) || '' }}
+              </div>
+              <div class="goods-footer-row">
+                <div class="goods-price">{{ item.price }}円</div>
+                <div class="publisher-tag" :title="item.userName || $t('common.anonymous')">
+                  <i class="el-icon-user"></i> {{ item.userName || $t('common.anonymous') }}
+                </div>
               </div>
             </div>
           </div>
@@ -75,7 +76,7 @@
       </div>
     </div>
 
-    <div v-if="goods.length == 0">
+    <div v-if="validGoods.length == 0">
       <el-empty :image-size="300" :image="require('@/assets/empty.svg')" description="商品がありません"></el-empty>
     </div>
   </div>
@@ -93,6 +94,12 @@ export default {
       pageSize: 20,
       keyboard: this.$route.query.name || '',
       goods: [],
+    }
+  },
+  computed: {
+    validGoods() {
+      if (!Array.isArray(this.goods)) return []
+      return this.goods.filter(item => item && (item.id || item.name))
     }
   },
   created() {
@@ -166,7 +173,8 @@ export default {
           typeId: this.selectedCategoryId
         }
       }).then(res => {
-        this.goods = res.data?.records || []
+        const records = res.data?.records || []
+        this.goods = records.filter(item => item && (item.id || item.name))
         this.total = res.data?.total || 0
       })
     },
@@ -307,30 +315,52 @@ export default {
   box-shadow: none !important;
 }
 
-/* 商品卡片网格布局：严格向前对齐，列宽一致，消除散落空白 */
-.goods-grid-wrapper {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* Flex 弹性盒模式：自动换行、严格从最左侧对齐、间距一致 */
+.goods-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: stretch;
   gap: 16px;
   margin-top: 18px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* 每行固定 4 列：4 * 25% 减去 3 个 16px 间隙 = 48px / 4 = 12px */
+.goods-flex-item {
+  flex: 0 0 calc((100% - 48px) / 4);
+  width: calc((100% - 48px) / 4);
+  max-width: calc((100% - 48px) / 4);
+  box-sizing: border-box;
 }
 
 @media (max-width: 992px) {
-  .goods-grid-wrapper {
-    grid-template-columns: repeat(3, 1fr);
+  .goods-flex-container {
     gap: 12px;
+  }
+  /* 平板端 3 列：3 * 33.333% 减去 2 个 12px 间隙 = 24px / 3 = 8px */
+  .goods-flex-item {
+    flex: 0 0 calc((100% - 24px) / 3);
+    width: calc((100% - 24px) / 3);
+    max-width: calc((100% - 24px) / 3);
   }
 }
 
 @media (max-width: 640px) {
-  .goods-grid-wrapper {
-    grid-template-columns: repeat(2, 1fr);
+  .goods-flex-container {
     gap: 10px;
+  }
+  /* 移动端 2 列：2 * 50% 减去 1 个 10px 间隙 = 10px / 2 = 5px */
+  .goods-flex-item {
+    flex: 0 0 calc((100% - 10px) / 2);
+    width: calc((100% - 10px) / 2);
+    max-width: calc((100% - 10px) / 2);
   }
 }
 
 .card-item {
+  width: 100%;
   height: 310px;
   min-height: 310px;
   max-height: 310px;
