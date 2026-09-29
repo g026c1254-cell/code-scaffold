@@ -40,7 +40,7 @@
             <img
               :src="getNoticeImage(item)"
               class="notice-card-cover"
-              @error="handleNoticeImageError"
+              @error="handleNoticeImageError($event, item)"
               alt="Notice cover"
             />
             <span class="notice-card-badge">{{ noticeCategory(item) }}</span>
@@ -68,6 +68,7 @@
                   type="button"
                   class="card-like-btn"
                   :class="{ 'is-liked': item.isLiked }"
+                  :disabled="!!likingNoticeMap[item.id]"
                   @click.stop="handleLike(item)"
                   title="いいね"
                 >
@@ -107,6 +108,7 @@
                 type="button"
                 class="like-btn"
                 :class="{ 'is-liked': selectedNotice.isLiked }"
+                :disabled="!!likingNoticeMap[selectedNotice.id]"
                 @click="handleLike(selectedNotice)"
               >
                 <i :class="selectedNotice.isLiked ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
@@ -118,7 +120,7 @@
 
         <el-divider></el-divider>
 
-        <div class="modal-notice-content" v-html="selectedNotice.content"></div>
+        <div class="modal-notice-content" v-html="formatModalNoticeContent(selectedNotice.content)"></div>
 
         <!-- 评论区模块 -->
         <div class="notice-comment-section">
@@ -378,6 +380,7 @@ export default {
       goodsCols: 4,
       noticeDetailVisible: false,
       selectedNotice: null,
+      likingNoticeMap: {},
       noticeForm: {
         name: '',
         content: '',
@@ -402,7 +405,24 @@ export default {
             server: '',
             fieldName: 'file',
             headers: {},
-            allowedFileTypes: ['image/*']
+            allowedFileTypes: ['image/*'],
+            customInsert: (res, insertFn) => {
+              let url = ''
+              if (res && res.data) {
+                if (typeof res.data === 'string') {
+                  url = res.data
+                } else if (Array.isArray(res.data) && res.data.length > 0) {
+                  url = typeof res.data[0] === 'string' ? res.data[0] : res.data[0].url
+                } else if (res.data.url) {
+                  url = res.data.url
+                }
+              } else if (res && res.url) {
+                url = res.url
+              }
+              if (url) {
+                insertFn(this.getImageUrl(url))
+              }
+            }
           }
         }
       },
@@ -479,24 +499,101 @@ export default {
         this.loadComments(item.id)
       }
     },
-    getNoticeImage(item) {
-      if (!item) return require('@/assets/bg1.jpeg')
-      if (item.cover) return this.getImageUrl(item.cover)
-      if (item.img) return this.getImageUrl(item.img)
-      if (item.content) {
-        const match = item.content.match(/<img[^>]+src=["']([^"']+)["']/i)
-        if (match && match[1]) {
-          return this.getImageUrl(match[1])
+    extractFirstNoticeImage(content) {
+      if (!content || typeof content !== 'string') return null
+      let str = content.trim()
+      if (!str) return null
+
+      // 1. If HTML entities exist (like &lt;img or &quot;), decode them
+      if (str.includes('&lt;') || str.includes('&quot;') || str.includes('&#')) {
+        try {
+          const doc = new DOMParser().parseFromString(str, 'text/html')
+          const img = doc.querySelector('img')
+          if (img && img.getAttribute('src')) {
+            return img.getAttribute('src').trim()
+          }
+          str = doc.body.textContent || str
+        } catch (e) {
+          str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
         }
       }
+
+      // 2. DOM extraction in browser if contains <img
+      if (typeof document !== 'undefined' && /<img\b/i.test(str)) {
+        try {
+          const div = document.createElement('div')
+          div.innerHTML = str
+          const img = div.querySelector('img')
+          if (img && img.getAttribute('src')) {
+            return img.getAttribute('src').trim()
+          }
+        } catch (e) {}
+      }
+
+      // 3. Robust Regex for standard <img ... src="..." />
+      const imgRegex = /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']?/i
+      const imgMatch = str.match(imgRegex)
+      if (imgMatch && imgMatch[1]) {
+        return imgMatch[1].trim()
+      }
+
+      // 4. Markdown format: ![alt](url)
+      const mdRegex = /!\[.*?\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)/i
+      const mdMatch = str.match(mdRegex)
+      if (mdMatch && mdMatch[1]) {
+        return mdMatch[1].trim()
+      }
+
+      // 5. Raw image URL check
+      const rawUrlRegex = /(https?:\/\/[^\s"']+\.(?:png|jpe?g|gif|webp|svg))/i
+      const rawMatch = str.match(rawUrlRegex)
+      if (rawMatch && rawMatch[1]) {
+        return rawMatch[1].trim()
+      }
+
+      return null
+    },
+    formatModalNoticeContent(content) {
+      if (!content) return ''
+      let formatted = content
+      if (/<[a-z][\s\S]*>/i.test(content)) {
+        formatted = formatted.replace(/(<img\b[^>]*?\bsrc=["'])(\/file\/download\/[^"']+)(["'])/gi, (match, p1, p2, p3) => {
+          return p1 + this.$baseUrl + p2 + p3
+        })
+        return formatted
+      }
+      return content.replace(/\r?\n/g, '<br>')
+    },
+    getNoticeImage(item) {
+      if (!item) return require('@/assets/bg1.jpeg')
       const defaultCovers = [
         require('@/assets/bg1.jpeg'),
         require('@/assets/bg2.jpg')
       ]
-      return defaultCovers[(item.id || 0) % defaultCovers.length]
+      const fallback = defaultCovers[(item.id || 0) % defaultCovers.length]
+
+      // 优先从公告正文内容提取第一张图片作为卡片封面
+      if (item.content) {
+        const extracted = this.extractFirstNoticeImage(item.content)
+        if (extracted) {
+          return this.getImageUrl(extracted)
+        }
+      }
+      if (item.cover) return this.getImageUrl(item.cover)
+      if (item.img) return this.getImageUrl(item.img)
+
+      return fallback
     },
-    handleNoticeImageError(e) {
-      e.target.src = require('@/assets/bg1.jpeg')
+    handleNoticeImageError(e, item) {
+      const defaultCovers = [
+        require('@/assets/bg1.jpeg'),
+        require('@/assets/bg2.jpg')
+      ]
+      const id = item && item.id ? item.id : 0
+      const fallback = defaultCovers[id % defaultCovers.length]
+      if (e && e.target && e.target.src !== fallback) {
+        e.target.src = fallback
+      }
     },
     uploadNoticeCover(options) {
       const formData = new FormData()
@@ -516,6 +613,23 @@ export default {
       this.editorConfig.MENU_CONF.uploadImage.server = this.$baseUrl + '/file/editor/upload'
       const user = JSON.parse(localStorage.getItem('user') || '{}')
       this.editorConfig.MENU_CONF.uploadImage.headers = { token: user.token || '' }
+      this.editorConfig.MENU_CONF.uploadImage.customInsert = (res, insertFn) => {
+        let url = ''
+        if (res && res.data) {
+          if (typeof res.data === 'string') {
+            url = res.data
+          } else if (Array.isArray(res.data) && res.data.length > 0) {
+            url = typeof res.data[0] === 'string' ? res.data[0] : res.data[0].url
+          } else if (res.data.url) {
+            url = res.data.url
+          }
+        } else if (res && res.url) {
+          url = res.url
+        }
+        if (url) {
+          insertFn(this.getImageUrl(url))
+        }
+      }
     },
     loadCarousel(){
       this.$request.get('/carousel/selectAll').then(res => {
@@ -604,25 +718,46 @@ export default {
       })
     },
     handleLike(item) {
-      if (!this.user || !this.user.id) {
-        this.$message.warning('ログインが必要です')
+      if (!item || !item.id) return
+      const noticeId = item.id
+      if (this.likingNoticeMap[noticeId]) return
+
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      this.user = user
+      if (!user || !user.id || !user.token) {
+        this.$message.warning(this.$t ? this.$t('common.loginRequired') : 'ログインが必要です')
         this.$router.push({ path: '/login', query: { redirect: this.$route.fullPath } })
         return
       }
-      this.$request.post(`/notice/like/${item.id}`).then(res => {
-        if (res.code === '200' && res.data) {
-          this.$set(item, 'isLiked', res.data.isLiked)
-          this.$set(item, 'likes', res.data.likes)
-          if (this.selectedNotice && this.selectedNotice.id === item.id) {
-            this.$set(this.selectedNotice, 'isLiked', res.data.isLiked)
-            this.$set(this.selectedNotice, 'likes', res.data.likes)
+
+      this.$set(this.likingNoticeMap, noticeId, true)
+      this.$request.post(`/notice/like/${noticeId}`).then(res => {
+        if (res && res.code === '200' && res.data) {
+          const isLiked = res.data.isLiked
+          const likes = res.data.likes
+
+          const targetInList = this.notices.find(n => n.id === noticeId)
+          if (targetInList) {
+            this.$set(targetInList, 'isLiked', isLiked)
+            this.$set(targetInList, 'likes', likes)
+          } else {
+            this.$set(item, 'isLiked', isLiked)
+            this.$set(item, 'likes', likes)
           }
-          this.$message.success(res.data.isLiked ? 'いいねしました' : 'いいねを取り消しました')
-        } else {
+
+          if (this.selectedNotice && this.selectedNotice.id === noticeId) {
+            this.$set(this.selectedNotice, 'isLiked', isLiked)
+            this.$set(this.selectedNotice, 'likes', likes)
+          }
+
+          this.$message.success(isLiked ? 'いいねしました' : 'いいねを取り消しました')
+        } else if (res && res.code !== '401') {
           this.$message.error(res.msg || '操作に失敗しました')
         }
       }).catch(() => {
         this.$message.error('操作に失敗しました')
+      }).finally(() => {
+        this.$set(this.likingNoticeMap, noticeId, false)
       })
     },
     submitComment(noticeId) {
@@ -746,7 +881,9 @@ export default {
     submitNotice() {
       this.$refs.noticeForm.validate(valid => {
         if (!valid) return
-        if (!this.stripHtml(this.noticeForm.content)) {
+        const hasText = !!this.stripHtml(this.noticeForm.content)
+        const hasImg = !!this.extractFirstNoticeImage(this.noticeForm.content)
+        if (!hasText && !hasImg) {
           this.$message.error(this.$t('common.content'))
           return
         }
@@ -761,6 +898,10 @@ export default {
           if (res.code === '200') {
             this.$message.success('お知らせを投稿しました')
             this.noticeDialogVisible = false
+            this.noticeForm = { name: '', content: '', cover: '' }
+            if (this.noticeEditor) {
+              this.noticeEditor.clear()
+            }
             this.loadNotice()
           } else {
             this.$message.error(res.msg || 'お知らせの投稿に失敗しました')

@@ -164,32 +164,33 @@ public class NoticeServiceImpl implements INoticeService {
         LambdaQueryWrapper<NoticeLike> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(NoticeLike::getNoticeId, noticeId)
                 .eq(NoticeLike::getUserId, currentUser.getId());
-        NoticeLike existing = noticeLikeMapper.selectOne(queryWrapper);
+        List<NoticeLike> existingList = noticeLikeMapper.selectList(queryWrapper);
 
         boolean isLiked;
-        if (existing != null) {
-            noticeLikeMapper.deleteById(existing.getId());
-            noticeMapper.decrementLikes(noticeId);
+        if (!existingList.isEmpty()) {
+            for (NoticeLike existing : existingList) {
+                noticeLikeMapper.deleteById(existing.getId());
+            }
             isLiked = false;
         } else {
-            try {
-                NoticeLike like = new NoticeLike();
-                like.setNoticeId(noticeId);
-                like.setUserId(currentUser.getId());
-                like.setCreateTime(DateUtil.now());
-                noticeLikeMapper.insert(like);
-                noticeMapper.incrementLikes(noticeId);
-                isLiked = true;
-            } catch (Exception e) {
-                isLiked = true;
-            }
+            NoticeLike like = new NoticeLike();
+            like.setNoticeId(noticeId);
+            like.setUserId(currentUser.getId());
+            like.setCreateTime(DateUtil.now());
+            noticeLikeMapper.insert(like);
+            isLiked = true;
         }
 
-        Notice updated = noticeMapper.selectById(noticeId);
-        int likes = (updated != null && updated.getLikes() != null) ? updated.getLikes() : 0;
-        if (likes < 0) {
-            likes = 0;
-        }
+        // 以 notice_like 记录总数同步更新 notice.likes，保证绝对数据准确与防溢出
+        LambdaQueryWrapper<NoticeLike> countWrapper = new LambdaQueryWrapper<>();
+        countWrapper.eq(NoticeLike::getNoticeId, noticeId);
+        Long count = noticeLikeMapper.selectCount(countWrapper);
+        int likes = (count != null && count > 0) ? count.intValue() : 0;
+
+        Notice updateNotice = new Notice();
+        updateNotice.setId(noticeId);
+        updateNotice.setLikes(likes);
+        noticeMapper.updateById(updateNotice);
 
         Map<String, Object> result = new HashMap<>();
         result.put("isLiked", isLiked);

@@ -248,7 +248,24 @@ export default {
             server: '',
             fieldName: 'file',
             headers: {},
-            allowedFileTypes: ['image/*']
+            allowedFileTypes: ['image/*'],
+            customInsert: (res, insertFn) => {
+              let url = ''
+              if (res && res.data) {
+                if (typeof res.data === 'string') {
+                  url = res.data
+                } else if (Array.isArray(res.data) && res.data.length > 0) {
+                  url = typeof res.data[0] === 'string' ? res.data[0] : res.data[0].url
+                } else if (res.data.url) {
+                  url = res.data.url
+                }
+              } else if (res && res.url) {
+                url = res.url
+              }
+              if (url) {
+                insertFn(this.getImageUrl(url))
+              }
+            }
           }
         }
       },
@@ -291,6 +308,23 @@ export default {
       this.editorConfig.MENU_CONF.uploadImage.server = this.$baseUrl + '/file/editor/upload'
       const user = JSON.parse(localStorage.getItem('user') || '{}')
       this.editorConfig.MENU_CONF.uploadImage.headers = { token: user.token || '' }
+      this.editorConfig.MENU_CONF.uploadImage.customInsert = (res, insertFn) => {
+        let url = ''
+        if (res && res.data) {
+          if (typeof res.data === 'string') {
+            url = res.data
+          } else if (Array.isArray(res.data) && res.data.length > 0) {
+            url = typeof res.data[0] === 'string' ? res.data[0] : res.data[0].url
+          } else if (res.data.url) {
+            url = res.data.url
+          }
+        } else if (res && res.url) {
+          url = res.url
+        }
+        if (url) {
+          insertFn(this.getImageUrl(url))
+        }
+      }
     },
     loadActivity() {
       this.loadTypes()
@@ -444,7 +478,9 @@ export default {
     submitEditNotice() {
       this.$refs.editNoticeForm.validate(valid => {
         if (!valid) return
-        if (!this.stripHtml(this.editNoticeForm.content)) {
+        const hasText = !!this.stripHtml(this.editNoticeForm.content)
+        const hasImg = /<img\b/i.test(this.editNoticeForm.content)
+        if (!hasText && !hasImg) {
           this.$message.error(this.$t('common.content'))
           return
         }

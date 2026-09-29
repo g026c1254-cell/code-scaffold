@@ -10,18 +10,18 @@ import com.example.springboot.common.Result;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 
+/**
+ * 文件接口
+ */
 @RestController
 @CrossOrigin
 @RequestMapping("/file")
@@ -37,18 +37,25 @@ public class FileController {
 
     private static String resolveRootPath() {
         File workingDirectory = new File(System.getProperty("user.dir"));
-        File filesDirectory = new File(workingDirectory, "files");
-        if (filesDirectory.exists() || !"springboot".equalsIgnoreCase(workingDirectory.getName())) {
-            return filesDirectory.getAbsolutePath();
+        // 1. 优先检查当前目录下的 files 文件夹
+        File currentFiles = new File(workingDirectory, "files");
+        if (currentFiles.exists()) {
+            return currentFiles.getAbsolutePath();
         }
-
-        File projectFilesDirectory = new File(workingDirectory.getParentFile(), "files");
-        return projectFilesDirectory.getAbsolutePath();
+        // 2. 若在子工程目录（如 springboot）下启动，检查父级工程的 files 文件夹
+        if (workingDirectory.getParentFile() != null) {
+            File parentFiles = new File(workingDirectory.getParentFile(), "files");
+            if (parentFiles.exists()) {
+                return parentFiles.getAbsolutePath();
+            }
+        }
+        // 3. 若均不存在，在 springboot 子目录启动时默认采用父工程 files 目录
+        if ("springboot".equalsIgnoreCase(workingDirectory.getName()) && workingDirectory.getParentFile() != null) {
+            return new File(workingDirectory.getParentFile(), "files").getAbsolutePath();
+        }
+        return currentFiles.getAbsolutePath();
     }
 
-    /**
-     * 文件上传
-     */
     @PostMapping("/upload")
     public Result upload(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -88,6 +95,33 @@ public class FileController {
         }
 
         response.addHeader("Content-Disposition", "inline;filename=" + URLEncoder.encode(fileName, "UTF-8"));
+
+        // 设置准确的 Content-Type，确保浏览器能正确渲染各类图片格式（webp、png、jpg、gif、svg等）
+        String mimeType = null;
+        try {
+            mimeType = Files.probeContentType(targetFile.toPath());
+        } catch (Exception ignored) {}
+        if (StrUtil.isBlank(mimeType)) {
+            mimeType = URLConnection.guessContentTypeFromName(fileName);
+        }
+        if (StrUtil.isBlank(mimeType)) {
+            String ext = FileUtil.extName(fileName);
+            if ("webp".equalsIgnoreCase(ext)) {
+                mimeType = "image/webp";
+            } else if ("png".equalsIgnoreCase(ext)) {
+                mimeType = "image/png";
+            } else if ("jpg".equalsIgnoreCase(ext) || "jpeg".equalsIgnoreCase(ext)) {
+                mimeType = "image/jpeg";
+            } else if ("gif".equalsIgnoreCase(ext)) {
+                mimeType = "image/gif";
+            } else if ("svg".equalsIgnoreCase(ext)) {
+                mimeType = "image/svg+xml";
+            }
+        }
+        if (StrUtil.isNotBlank(mimeType)) {
+            response.setContentType(mimeType);
+        }
+
         byte[] bytes = FileUtil.readBytes(targetFile);
         ServletOutputStream outputStream = response.getOutputStream();
         try {
@@ -100,7 +134,7 @@ public class FileController {
     }
 
     /**
-     * 富文本上传图片
+     * 富文本上传图片（适配 WangEditor v5 标准数据格式）
      */
     @PostMapping("/editor/upload")
     public Dict editorUpload(MultipartFile file) throws IOException {
@@ -116,6 +150,9 @@ public class FileController {
         File saveFile = new File(ROOT_PATH + File.separator + safeFileName);
         file.transferTo(saveFile);
         String url = "http://" + ip + ":" + port + "/file/download/" + safeFileName;
-        return Dict.create().set("errno", 0).set("data", CollUtil.newArrayList(Dict.create().set("url", url)));
+        // 同时提供 object 与 url，完美适配各类前端编辑器解析
+        return Dict.create().set("errno", 0)
+                .set("data", Dict.create().set("url", url).set("alt", originalFilename).set("href", url))
+                .set("url", url);
     }
 }

@@ -2,9 +2,13 @@ import axios from 'axios'
 import router from "@/router";
 import { Notification } from 'element-ui'
 
+const defaultBaseUrl = typeof window !== 'undefined'
+  ? (window.location.protocol + '//' + (window.location.hostname || 'localhost') + ':9999')
+  : 'http://localhost:9999'
+
 // 创建一个新的axios实例
 const request = axios.create({
-    baseURL: process.env.VUE_APP_API_BASE_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:9999'),
+    baseURL: process.env.VUE_APP_API_BASE_URL || (process.env.NODE_ENV === 'production' ? '/api' : defaultBaseUrl),
     timeout: 30000 // 请求超时时间：30秒（超过该时间未响应则视为请求失败）
 })
 
@@ -41,8 +45,8 @@ request.interceptors.response.use(
             res = res ? JSON.parse(res) : res
         }
 
-        if (res.code === '401') {
-            Notification.error({message: res.msg, duration: 3000, showClose: false})
+        if (res && res.code === '401') {
+            Notification.error({message: res.msg || 'token验证失败，请重新登录', duration: 3000, showClose: false})
             localStorage.removeItem('user')
             if (router.currentRoute.path !== '/login') {
                 router.replace({

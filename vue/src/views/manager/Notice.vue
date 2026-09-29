@@ -148,8 +148,12 @@ export default {
     },
     formatNoticeContent(content) {
       if (!content) return ''
+      let formatted = content
       if (/<[a-z][\s\S]*>/i.test(content)) {
-        return content
+        formatted = formatted.replace(/(<img\b[^>]*?\bsrc=["'])(\/file\/download\/[^"']+)(["'])/gi, (match, p1, p2, p3) => {
+          return p1 + this.$baseUrl + p2 + p3
+        })
+        return formatted
       }
       return content.replace(/\r?\n/g, '<br>')
     },

@@ -15,8 +15,12 @@ Vue.use(ElementUI, {size: 'small'});  // 安装Element UI插件到Vue，并全�
 Vue.config.productionTip = false
 // 把自定义axios实例挂载到Vue原型上，全局可通过this.$request调用
 Vue.prototype.$request = request
+
+const defaultBaseUrl = typeof window !== 'undefined'
+  ? (window.location.protocol + '//' + (window.location.hostname || 'localhost') + ':9999')
+  : 'http://localhost:9999'
 // 把后端基础地址挂载到Vue原型上，全局可通过this.$baseUrl获取
-Vue.prototype.$baseUrl = process.env.VUE_APP_API_BASE_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:9999')
+Vue.prototype.$baseUrl = process.env.VUE_APP_API_BASE_URL || (process.env.NODE_ENV === 'production' ? '/api' : defaultBaseUrl)
 
 // 创建Vue实例
 new Vue({
