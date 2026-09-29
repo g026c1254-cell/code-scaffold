@@ -23,6 +23,12 @@
         <el-table-column prop="time" label="追加日時" :show-overflow-tooltip="true"></el-table-column>
         <el-table-column prop="userId" label="追加者ID"></el-table-column>
         <el-table-column prop="userName" label="投稿者" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="views" label="閲覧数" width="85" align="center">
+          <template v-slot="scope">{{ scope.row.views || 0 }}</template>
+        </el-table-column>
+        <el-table-column prop="likes" label="いいね" width="85" align="center">
+          <template v-slot="scope">{{ scope.row.likes || 0 }}</template>
+        </el-table-column>
         <el-table-column label="操作" align="center" width="240">
           <template v-slot="scope">
             <el-button size="mini" type="success" plain @click="detail(scope.row)">詳細</el-button>

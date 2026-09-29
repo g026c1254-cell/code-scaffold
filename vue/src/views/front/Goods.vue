@@ -62,7 +62,7 @@
         <el-pagination
             @current-change="handleCurrentChange"
             :current-page="pageNum"
-            :page-sizes="[8, 16, 32]"
+            :page-sizes="[20, 40, 60]"
             :page-size="pageSize"
             layout="total, prev, pager, next, jumper"
             :total="total"
@@ -86,7 +86,7 @@ export default {
       selectedCategoryId: parseInt(this.$route.query.selectedCategoryId) || 0,
       total: 0,
       pageNum: 1,
-      pageSize: 8,
+      pageSize: 20,
       keyboard: this.$route.query.name || '',
       goods: [],
     }
@@ -100,11 +100,33 @@ export default {
       this.keyboard = value || ''
       this.pageNum = 1
       this.loadGoods()
+    },
+    '$route.query.selectedCategoryId'(value) {
+      const id = parseInt(value) || 0
+      if (this.selectedCategoryId !== id) {
+        this.selectedCategoryId = id
+        this.pageNum = 1
+        this.loadGoods()
+      }
     }
   },
   methods:{
     displayTypeName(name) {
       if (!name) return ''
+      const categoryMap = {
+        '零食': 'お菓子・食品',
+        '饮料': '飲料・ドリンク',
+        '数码产品': '家電・スマホ',
+        '女装': 'レディース',
+        '男装': 'メンズ',
+        '家具': 'インテリア・家具',
+        '办公用品': '文房具・日用品',
+        '图书': '本・教科書',
+        '美妆': 'コスメ・美容',
+        '食品': 'お菓子・食品',
+        '日用品': '文房具・日用品'
+      }
+      if (categoryMap[name]) return categoryMap[name]
       const key = 'category.' + name
       const translated = this.$t(key)
       return translated === key ? name : translated
@@ -135,17 +157,21 @@ export default {
       })
     },
     handleAllClick() {
-      this.selectedCategoryId = 0;
+      if (this.selectedCategoryId === 0) return
+      this.selectedCategoryId = 0
+      this.pageNum = 1
       this.$router.replace({
         query: { ...this.$route.query, selectedCategoryId: 0 }
-      })
+      }).catch(() => {})
       this.loadGoods()
     },
     handleCategoryClick(category) {
-      this.selectedCategoryId = category.id;
+      if (this.selectedCategoryId === category.id) return
+      this.selectedCategoryId = category.id
+      this.pageNum = 1
       this.$router.replace({
         query: { ...this.$route.query, selectedCategoryId: category.id }
-      })
+      }).catch(() => {})
       this.loadGoods()
     },
     handleCurrentChange(pageNum){

@@ -51,6 +51,12 @@
               <el-table-column :label="$t('common.content')" min-width="300" show-overflow-tooltip>
                 <template v-slot="scope">{{ stripHtml(scope.row.content) }}</template>
               </el-table-column>
+              <el-table-column prop="views" label="閲覧数" width="85" align="center">
+                <template v-slot="scope">{{ scope.row.views || 0 }}</template>
+              </el-table-column>
+              <el-table-column prop="likes" label="いいね" width="85" align="center">
+                <template v-slot="scope">{{ scope.row.likes || 0 }}</template>
+              </el-table-column>
               <el-table-column prop="time" :label="$t('common.publishTime')" width="180"></el-table-column>
               <el-table-column :label="$t('common.operation')" width="100">
                 <template v-slot="scope">
@@ -300,6 +306,20 @@ export default {
     },
     displayTypeName(name) {
       if (!name) return ''
+      const categoryMap = {
+        '零食': 'お菓子・食品',
+        '饮料': '飲料・ドリンク',
+        '数码产品': '家電・スマホ',
+        '女装': 'レディース',
+        '男装': 'メンズ',
+        '家具': 'インテリア・家具',
+        '办公用品': '文房具・日用品',
+        '图书': '本・教科書',
+        '美妆': 'コスメ・美容',
+        '食品': 'お菓子・食品',
+        '日用品': '文房具・日用品'
+      }
+      if (categoryMap[name]) return categoryMap[name]
       const key = 'category.' + name
       const translated = this.$t(key)
       return translated === key ? name : translated

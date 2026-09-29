@@ -150,7 +150,7 @@ public class GoodsServiceImpl implements IGoodsService {
     @Override
     public List<Goods> times() {
         LambdaQueryWrapper<Goods> queryWrapper = publicGoodsQuery();
-        queryWrapper.orderByDesc(Goods::getDate).last("LIMIT 4");
+        queryWrapper.orderByDesc(Goods::getDate).last("LIMIT 12");
         List<Goods> goods = goodsMapper.selectList(queryWrapper);
         enrichGoods(goods);
         return goods;

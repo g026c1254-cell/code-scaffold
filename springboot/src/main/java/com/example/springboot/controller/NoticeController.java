@@ -1,10 +1,10 @@
 package com.example.springboot.controller;
 
+import com.example.springboot.common.AuthAccess;
 import com.example.springboot.common.Result;
 import com.example.springboot.entity.Notice;
 import com.example.springboot.service.INoticeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -20,7 +20,6 @@ public class NoticeController {
      */
     @PostMapping("/add")
     public Result add(@RequestBody Notice notice){
-        // 发布者信息由服务端根据 token 写入，忽略客户端传入值。
         notice.setUserId(null);
         notice.setUserName(null);
         noticeService.save(notice);
@@ -56,6 +55,7 @@ public class NoticeController {
     /**
      * 查询全部数据
      */
+    @AuthAccess
     @GetMapping("/selectAll")
     public Result selectAll(){
         return Result.success(noticeService.selectAll());
@@ -64,9 +64,27 @@ public class NoticeController {
     /**
      * 根据ID查询
      */
+    @AuthAccess
     @GetMapping("/selectById")
     public Result selectById(@RequestParam Integer id){
         return Result.success(noticeService.selectById(id));
+    }
+
+    /**
+     * 根据ID查询（RESTful 路径）
+     */
+    @AuthAccess
+    @GetMapping("/selectById/{id}")
+    public Result selectByIdPath(@PathVariable Integer id){
+        return Result.success(noticeService.selectById(id));
+    }
+
+    /**
+     * 点赞 / 取消点赞
+     */
+    @PostMapping("/like/{noticeId}")
+    public Result like(@PathVariable Integer noticeId){
+        return Result.success(noticeService.toggleLike(noticeId));
     }
 
     /**

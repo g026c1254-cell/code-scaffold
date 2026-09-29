@@ -195,3 +195,32 @@ INSERT INTO `user` VALUES (5, '123', '123', '123', NULL, NULL, NULL, 'http://loc
 INSERT INTO `user` VALUES (6, '666', '666', '666', NULL, NULL, NULL, 'pixel:1949944393', NULL, NULL, NULL, 'USER', 0.00, 0.00);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------
+-- Table structure for notice_like
+-- ----------------------------
+DROP TABLE IF EXISTS `notice_like`;
+CREATE TABLE `notice_like` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `notice_id` int NOT NULL COMMENT '关联公告ID',
+  `user_id` int NOT NULL COMMENT '点赞用户ID',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '点赞时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_notice_user` (`notice_id`, `user_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '公告点赞表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for notice_comment
+-- ----------------------------
+DROP TABLE IF EXISTS `notice_comment`;
+CREATE TABLE `notice_comment` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `notice_id` int NOT NULL COMMENT '关联公告ID',
+  `user_id` int NOT NULL COMMENT '评论发布者ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发布者昵称',
+  `user_avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发布者头像',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '评论内容',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '评论时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_notice_id` (`notice_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '公告评论表' ROW_FORMAT = Dynamic;

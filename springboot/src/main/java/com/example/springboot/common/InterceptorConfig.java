@@ -18,7 +18,7 @@ public class InterceptorConfig extends WebMvcConfigurationSupport {
                 .excludePathPatterns("/login", "/register", "/password", "/user/**", "/type/**", "/carousel/**",
                         "/goods/selectAll", "/goods/selectById", "/goods/selectPage",
                         "/goods/selectPage/type", "/goods/times",
-                        "/notice/selectAll", "/notice/selectById");
+                        "/notice/selectAll", "/notice/selectById", "/notice/selectById/**", "/noticeComment/selectByNoticeId/**");
         super.addInterceptors(registry);
     }
 

@@ -7,20 +7,18 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 @Data
-@TableName("notice")
-public class Notice {
+@TableName("notice_like")
+public class NoticeLike {
 
     @TableId(type = IdType.AUTO)
     private Integer id;
-    private String name;
-    private String content;
-    private String time;
-    private Integer userId;
-    @TableField("user_name")
-    private String userName;
-    private Integer views;
-    private Integer likes;
 
-    @TableField(exist = false)
-    private Boolean isLiked;
+    @TableField("notice_id")
+    private Integer noticeId;
+
+    @TableField("user_id")
+    private Integer userId;
+
+    @TableField("create_time")
+    private String createTime;
 }

@@ -109,6 +109,20 @@ export default {
   methods:{
     displayTypeName(name) {
       if (!name) return ''
+      const categoryMap = {
+        '零食': 'お菓子・食品',
+        '饮料': '飲料・ドリンク',
+        '数码产品': '家電・スマホ',
+        '女装': 'レディース',
+        '男装': 'メンズ',
+        '家具': 'インテリア・家具',
+        '办公用品': '文房具・日用品',
+        '图书': '本・教科書',
+        '美妆': 'コスメ・美容',
+        '食品': 'お菓子・食品',
+        '日用品': '文房具・日用品'
+      }
+      if (categoryMap[name]) return categoryMap[name]
       const key = 'category.' + name
       const translated = this.$t(key)
       return translated === key ? name : translated

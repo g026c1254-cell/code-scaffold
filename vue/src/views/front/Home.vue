@@ -2,7 +2,7 @@
   <div class="homeContainer">
     <div class="carousel-margin">
       <div class="category-panel">
-        <div v-for="(item,index) in types" :key="index" class="type-item" @click="goPage('/front/goods')">
+        <div v-for="(item,index) in types" :key="index" class="type-item" @click="goCategoryGoods(item.id)">
           <span>{{ displayTypeName(item.name) }}</span>
           <i class="el-icon-arrow-right"></i>
         </div>
@@ -10,7 +10,7 @@
       <div class="carousel-panel" ref="carouselPanel" @touchstart="handleCarouselTouchStart" @touchend="handleCarouselTouchEnd">
         <el-carousel ref="homeCarousel" :height="carouselHeight" :interval="10000">
           <el-carousel-item v-for="item in carousels" :key="item.id">
-            <img :src="getImageUrl(item.cover)" class="carousel-img" @error="handleImageError" @click="goPage('/front/goods')" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
+            <img :src="getImageUrl(item.cover)" class="carousel-img" @error="handleImageError" @click="handleCarouselClick(item)" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
           </el-carousel-item>
         </el-carousel>
       </div>
@@ -33,11 +33,107 @@
             <span class="notice-date">{{ formatNoticeDate(item.time) }}</span>
             <span class="notice-category">{{ noticeCategory(item) }}</span>
             <span class="notice-item-title">{{ item.name }}</span>
+            <span class="notice-header-stats">
+              <span class="header-stat" title="閲覧数"><i class="el-icon-view"></i> {{ item.views || 0 }}</span>
+              <span class="header-stat" :class="{ 'is-liked': item.isLiked }" title="いいね"><i class="el-icon-star-on"></i> {{ item.likes || 0 }}</span>
+              <span class="header-stat" title="コメント数"><i class="el-icon-chat-round"></i> {{ (commentsMap[item.id] || []).length || 0 }}</span>
+            </span>
             <i class="el-icon-arrow-down notice-arrow" :class="{ 'is-open': isNoticeActive(index) }"></i>
           </button>
           <div v-show="isNoticeActive(index)" class="notice-item-body">
             <div class="notice-content" v-html="item.content"></div>
-            <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
+
+            <!-- 互动操作与发布者信息行 -->
+            <div class="notice-action-bar">
+              <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
+              <div class="notice-interactive-stats">
+                <span class="stat-badge view-badge" title="閲覧数">
+                  <i class="el-icon-view"></i>
+                  <span>{{ item.views || 0 }} 閲覧</span>
+                </span>
+                <button
+                  type="button"
+                  class="like-btn"
+                  :class="{ 'is-liked': item.isLiked }"
+                  @click.stop="handleLike(item)"
+                  title="いいね"
+                >
+                  <i :class="item.isLiked ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
+                  <span>{{ item.isLiked ? 'いいね済' : 'いいね' }} ({{ item.likes || 0 }})</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 评论区模块 -->
+            <div class="notice-comment-section">
+              <div class="comment-section-header">
+                <span class="comment-section-title">
+                  <i class="el-icon-chat-dot-round"></i> コメント
+                  <span class="comment-count-badge">({{ (commentsMap[item.id] || []).length }})</span>
+                </span>
+              </div>
+
+              <!-- 评论输入框 -->
+              <div class="comment-input-box">
+                <el-input
+                  type="textarea"
+                  :rows="2"
+                  :placeholder="user && user.id ? 'コメントを入力してください...' : 'コメントを投稿するにはログインしてください'"
+                  v-model="commentInputs[item.id]"
+                  maxlength="300"
+                  show-word-limit
+                  :disabled="!user || !user.id"
+                ></el-input>
+                <div class="comment-submit-row">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    class="comment-submit-btn"
+                    :disabled="!user || !user.id"
+                    @click="submitComment(item.id)"
+                  >
+                    コメント送信
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 评论列表 -->
+              <div class="comment-list" v-loading="commentsLoading[item.id]">
+                <div
+                  v-for="comment in (commentsMap[item.id] || [])"
+                  :key="comment.id"
+                  class="comment-item"
+                >
+                  <img
+                    :src="getImageUrl(comment.userAvatar)"
+                    class="comment-avatar"
+                    @error="handleImageError"
+                  />
+                  <div class="comment-content-wrap">
+                    <div class="comment-meta">
+                      <span class="comment-username">{{ comment.userName }}</span>
+                      <span class="comment-time">{{ formatCommentTime(comment.createTime) }}</span>
+                      <el-button
+                        v-if="user && user.id && (user.id === comment.userId || user.role === 'ADMIN')"
+                        type="text"
+                        size="mini"
+                        class="comment-del-btn"
+                        @click="deleteComment(item.id, comment.id)"
+                      >
+                        削除
+                      </el-button>
+                    </div>
+                    <div class="comment-text">{{ comment.content }}</div>
+                  </div>
+                </div>
+                <div
+                  v-if="!commentsLoading[item.id] && (!commentsMap[item.id] || commentsMap[item.id].length === 0)"
+                  class="no-comments-tip"
+                >
+                  まだコメントがありません。最初のコメントを投稿しましょう！
+                </div>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -232,6 +328,9 @@ export default {
         cover: [{ required: true, message: '商品画像をアップロード', trigger: 'change' }]
       },
       activeNames: [],
+      commentsMap: {},
+      commentsLoading: {},
+      commentInputs: {},
       carouselHeight: '440px',
       carouselTouchStartX: 0
     }
@@ -269,6 +368,7 @@ export default {
       })
     },
     displayTypeName(name) {
+      if (!name) return ''
       const categoryMap = {
         '零食': 'お菓子・食品',
         '饮料': '飲料・ドリンク',
@@ -278,9 +378,14 @@ export default {
         '家具': 'インテリア・家具',
         '办公用品': '文房具・日用品',
         '图书': '本・教科書',
-        '美妆': 'コスメ・美容'
+        '美妆': 'コスメ・美容',
+        '食品': 'お菓子・食品',
+        '日用品': '文房具・日用品'
       }
-      return categoryMap[name] || name
+      if (categoryMap[name]) return categoryMap[name]
+      const key = 'category.' + name
+      const translated = this.$t(key)
+      return translated === key ? name : translated
     },
     updateCarouselHeight() {
       this.carouselHeight = window.innerWidth <= 520 ? '220px' : (window.innerWidth <= 768 ? '300px' : '440px')
@@ -309,7 +414,98 @@ export default {
         this.activeNames.splice(activeIndex, 1)
       } else {
         this.activeNames.push(index)
+        const notice = this.notices[index]
+        if (notice && notice.id) {
+          this.$request.get(`/notice/selectById/${notice.id}`).then(res => {
+            if (res.code === '200' && res.data) {
+              this.$set(notice, 'views', res.data.views)
+              this.$set(notice, 'likes', res.data.likes)
+              if (typeof res.data.isLiked === 'boolean') {
+                this.$set(notice, 'isLiked', res.data.isLiked)
+              }
+            }
+          })
+          this.loadComments(notice.id)
+        }
       }
+    },
+    loadComments(noticeId) {
+      this.$set(this.commentsLoading, noticeId, true)
+      this.$request.get(`/noticeComment/selectByNoticeId/${noticeId}`).then(res => {
+        if (res.code === '200') {
+          this.$set(this.commentsMap, noticeId, Array.isArray(res.data) ? res.data : [])
+        }
+      }).catch(() => {
+        this.$set(this.commentsMap, noticeId, [])
+      }).finally(() => {
+        this.$set(this.commentsLoading, noticeId, false)
+      })
+    },
+    handleLike(item) {
+      if (!this.user || !this.user.id) {
+        this.$message.warning('ログインが必要です')
+        this.$router.push({ path: '/login', query: { redirect: this.$route.fullPath } })
+        return
+      }
+      this.$request.post(`/notice/like/${item.id}`).then(res => {
+        if (res.code === '200' && res.data) {
+          this.$set(item, 'isLiked', res.data.isLiked)
+          this.$set(item, 'likes', res.data.likes)
+          this.$message.success(res.data.isLiked ? 'いいねしました' : 'いいねを取り消しました')
+        } else {
+          this.$message.error(res.msg || '操作に失敗しました')
+        }
+      }).catch(() => {
+        this.$message.error('操作に失敗しました')
+      })
+    },
+    submitComment(noticeId) {
+      if (!this.user || !this.user.id) {
+        this.$message.warning('ログインが必要です')
+        this.$router.push({ path: '/login', query: { redirect: this.$route.fullPath } })
+        return
+      }
+      const content = (this.commentInputs[noticeId] || '').trim()
+      if (!content) {
+        this.$message.warning('コメントを入力してください')
+        return
+      }
+      this.$request.post('/noticeComment/add', {
+        noticeId,
+        content
+      }).then(res => {
+        if (res.code === '200') {
+          this.$message.success('コメントを投稿しました')
+          this.$set(this.commentInputs, noticeId, '')
+          this.loadComments(noticeId)
+        } else {
+          this.$message.error(res.msg || 'コメントの投稿に失敗しました')
+        }
+      }).catch(() => {
+        this.$message.error('コメントの投稿に失敗しました')
+      })
+    },
+    deleteComment(noticeId, commentId) {
+      this.$confirm('コメントを削除してもよろしいですか？', '確認', {
+        type: 'warning',
+        confirmButtonText: '削除',
+        cancelButtonText: 'キャンセル'
+      }).then(() => {
+        this.$request.delete(`/noticeComment/delete/${commentId}`).then(res => {
+          if (res.code === '200') {
+            this.$message.success('コメントを削除しました')
+            this.loadComments(noticeId)
+          } else {
+            this.$message.error(res.msg || 'コメントの削除に失敗しました')
+          }
+        }).catch(() => {
+          this.$message.error('コメントの削除に失敗しました')
+        })
+      }).catch(() => {})
+    },
+    formatCommentTime(time) {
+      if (!time) return ''
+      return String(time).replace('T', ' ')
     },
     isNoticeActive(index) {
       return this.activeNames.indexOf(index) >= 0
@@ -344,6 +540,19 @@ export default {
       }
       this.$router.push(target)
     },
+    goCategoryGoods(id) {
+      if (!id) {
+        this.$router.push('/front/goods')
+        return
+      }
+      this.$router.push({
+        path: '/front/goods',
+        query: { selectedCategoryId: id }
+      })
+    },
+    handleCarouselClick(item) {
+      this.goPage('/front/goods')
+    },
     goGoodsDetail(id){
       if (!id) {
         this.$message.error('商品情報が見つかりません')
@@ -354,6 +563,11 @@ export default {
     loadNotice() {
       this.$request.get('/notice/selectAll').then(res => {
         this.notices = Array.isArray(res.data) ? res.data : []
+        this.notices.forEach(notice => {
+          if (notice && notice.id) {
+            this.loadComments(notice.id)
+          }
+        })
       }).catch(() => {
         this.notices = []
       })
@@ -492,12 +706,16 @@ export default {
 .category-panel{
   flex: 1.7;
   min-width: 0;
-  padding: 10px 0;
+  padding: 12px 0;
   background: #fff;
   border: 1px solid rgba(226, 232, 240, .8);
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, .08), 0 8px 10px -6px rgba(15, 23, 42, .04);
   overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .carousel-panel{
@@ -513,14 +731,14 @@ export default {
 }
 
 .type-item{
-  margin: 3px 10px;
+  margin: 0 10px;
   padding: 0 16px;
-  height: 34px;
-  line-height: 34px;
+  height: 38px;
+  line-height: 38px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 7px;
+  border-radius: 8px;
   color: #334155;
   font-size: 14px;
   font-weight: 500;
@@ -687,10 +905,208 @@ export default {
   transform: rotate(180deg);
 }
 
+.notice-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.header-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-stat.is-liked {
+  color: #ff8a3d;
+}
+
 .notice-item-body {
-  padding: 0 40px 16px 8px;
+  padding: 0 16px 20px 8px;
   color: #64748b;
   line-height: 1.7;
+}
+
+.notice-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.notice-interactive-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.like-btn:hover {
+  color: #ff8a3d;
+  border-color: #fdba74;
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+
+.like-btn.is-liked {
+  color: #ea580c;
+  background: #ffedd5;
+  border-color: #f97316;
+  font-weight: 600;
+}
+
+.like-btn i {
+  font-size: 15px;
+}
+
+.notice-comment-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.comment-section-header {
+  margin-bottom: 12px;
+}
+
+.comment-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comment-count-badge {
+  color: #ff8a3d;
+}
+
+.comment-input-box {
+  margin-bottom: 16px;
+}
+
+.comment-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.comment-submit-btn {
+  background: linear-gradient(135deg, #ffa86b, #ff7e29);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.comment-submit-btn:hover {
+  background: linear-gradient(135deg, #ff9b57, #ff7014);
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.comment-content-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-username {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.comment-del-btn {
+  margin-left: auto;
+  color: #ef4444;
+  padding: 0;
+}
+
+.comment-del-btn:hover {
+  color: #dc2626;
+}
+
+.comment-text {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.no-comments-tip {
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 16px 0;
 }
 
 .publisher-tag {
@@ -857,6 +1273,7 @@ export default {
   .category-panel {
     order: 2;
     padding: 8px 4px;
+    display: block;
   }
 
   .carousel-panel {
@@ -868,6 +1285,8 @@ export default {
     display: inline-flex;
     width: calc(50% - 24px);
     margin: 3px 8px;
+    height: 34px;
+    line-height: 34px;
     box-sizing: border-box;
     padding: 0 10px;
     font-size: 13px;
@@ -881,6 +1300,29 @@ export default {
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .notice-item-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .notice-header-stats {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+    font-size: 12px;
+  }
+
+  .notice-action-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .notice-interactive-stats {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .publish-actions {
