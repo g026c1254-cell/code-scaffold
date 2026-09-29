@@ -84,8 +84,18 @@ public class GoodsServiceImpl implements IGoodsService {
         if (goods.getStore() == null || goods.getStore() < 1) {
             goods.setStore(1);
         }
+        if (StrUtil.isBlank(goods.getCover())) {
+            goods.setCover(existing.getCover());
+        }
+        if (StrUtil.isBlank(goods.getContent()) && StrUtil.isNotBlank(goods.getDescr())) {
+            goods.setContent(goods.getDescr());
+        }
+        if (StrUtil.isNotBlank(goods.getState())) {
+            goods.setState(goods.getState());
+        } else {
+            goods.setState(StrUtil.isNotBlank(existing.getState()) ? existing.getState() : "上架");
+        }
         goods.setDate(cn.hutool.core.date.DateUtil.now());
-        goods.setState("上架");
         goodsMapper.updateById(goods);
     }
 
