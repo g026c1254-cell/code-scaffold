@@ -50,6 +50,30 @@ public class UserController {
     }
 
     /**
+     * 充值
+     */
+    @PostMapping("/recharge")
+    public Result recharge(@RequestBody User user) {
+        User currentUser = TokenUtils.getCurrentUser();
+        Integer userId = currentUser != null ? currentUser.getId() : user.getId();
+        if (userId == null) {
+            return Result.error("401", "ログインしてください");
+        }
+        if (user.getAccount() == null || user.getAccount() <= 0) {
+            return Result.error("400", "有効なチャージ金額を入力してください");
+        }
+        User dbUser = userService.getById(userId);
+        if (dbUser == null) {
+            return Result.error("404", "ユーザーが存在しません");
+        }
+        double current = dbUser.getAccount() == null ? 0.0 : dbUser.getAccount();
+        double updatedAccount = current + user.getAccount();
+        dbUser.setAccount(updatedAccount);
+        userService.updateById(dbUser);
+        return Result.success(updatedAccount);
+    }
+
+    /**
      * 更新当前登录用户头像
      */
     @PutMapping("/avatar")

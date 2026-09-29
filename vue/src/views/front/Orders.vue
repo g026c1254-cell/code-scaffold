@@ -163,7 +163,11 @@ export default {
             this.$notify.success({title: '完了', message: '支払いが完了しました', showClose: false, duration: 2000})
             this.load()
           } else {
-            this.$notify.error({message: res.msg, showClose: false, duration: 2000})
+            let msg = res.msg || '支払いに失敗しました'
+            if (msg.indexOf('余额不足') !== -1 || msg.indexOf('残高が不足') !== -1) {
+              msg = '残高が不足しています。チャージしてください'
+            }
+            this.$notify.error({message: msg, showClose: false, duration: 2000})
           }
         })
       }).catch(() => {})

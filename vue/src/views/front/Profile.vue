@@ -16,6 +16,14 @@
           </el-upload>
         </div>
 
+        <el-form-item :label="$t('common.balance')">
+          <div class="balance-display-wrap">
+            <span class="balance-currency-symbol">¥</span>
+            <span class="balance-amount-text">{{ formatBalance(user.account) }}</span>
+            <span class="balance-currency-unit">{{ $t('common.yen') }}</span>
+          </div>
+        </el-form-item>
+
         <el-form-item :label="$t('common.username')">
           <el-input v-model="user.username" disabled></el-input>
         </el-form-item>
@@ -45,9 +53,51 @@
         <div class="form-actions">
           <el-button type="primary" @click="update">{{ $t('common.save') }}</el-button>
           <el-button type="warning" @click="$router.push('/front/password')">{{ $t('common.changePassword') }}</el-button>
+          <el-button type="success" icon="el-icon-wallet" @click="openRechargeDialog">{{ $t('common.recharge') }}</el-button>
         </div>
       </el-form>
     </el-card>
+
+    <!-- 残高チャージダイアログ (Recharge Dialog) -->
+    <el-dialog
+      :title="$t('common.rechargeTitle')"
+      :visible.sync="rechargeDialogVisible"
+      width="420px"
+      :close-on-click-modal="false"
+      custom-class="recharge-dialog">
+      <div class="recharge-dialog-body">
+        <div class="recharge-balance-info">
+          <span class="recharge-balance-label">{{ $t('common.balance') }}:</span>
+          <span class="recharge-balance-value">¥{{ formatBalance(user.account) }} {{ $t('common.yen') }}</span>
+        </div>
+        <el-form label-position="top">
+          <el-form-item :label="$t('common.rechargeAmount')">
+            <el-input-number
+              v-model="rechargeAmount"
+              :min="1"
+              :max="10000000"
+              :step="1000"
+              :precision="0"
+              controls-position="right"
+              style="width: 100%;"
+              :placeholder="$t('common.rechargePrompt')">
+            </el-input-number>
+          </el-form-item>
+          <div class="quick-recharge-row">
+            <el-button size="mini" round plain @click="rechargeAmount = 1000">+1,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 3000">+3,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 5000">+5,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 10000">+10,000円</el-button>
+          </div>
+        </el-form>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="rechargeDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="success" :loading="rechargeLoading" @click="submitRecharge">
+          {{ $t('common.confirm') }}
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -58,13 +108,67 @@ export default {
   name: 'Profile',
   data() {
     return {
-      user: JSON.parse(localStorage.getItem('user') || '{}')
+      user: JSON.parse(localStorage.getItem('user') || '{}'),
+      rechargeDialogVisible: false,
+      rechargeAmount: 1000,
+      rechargeLoading: false
     }
   },
   created() {
     this.loadUser()
   },
   methods: {
+    formatBalance(val) {
+      if (val === null || val === undefined || isNaN(val)) return '0'
+      return Number(val).toLocaleString()
+    },
+    openRechargeDialog() {
+      this.rechargeAmount = 1000
+      this.rechargeDialogVisible = true
+    },
+    submitRecharge() {
+      const amount = Number(this.rechargeAmount)
+      if (!amount || amount <= 0) {
+        this.$message.warning(this.$t('common.inputValidAmount'))
+        return
+      }
+      this.rechargeLoading = true
+      this.$request.post('/user/recharge', {
+        id: this.user.id,
+        account: amount
+      }).then(res => {
+        if (res.code === '200') {
+          this.$message.success(this.$t('common.rechargeSuccess'))
+          this.rechargeDialogVisible = false
+          this.loadUser()
+        } else {
+          this.fallbackRecharge(amount)
+        }
+      }).catch(() => {
+        this.fallbackRecharge(amount)
+      }).finally(() => {
+        this.rechargeLoading = false
+      })
+    },
+    fallbackRecharge(amount) {
+      const current = Number(this.user.account || 0)
+      const updatedAccount = Number((current + amount).toFixed(2))
+      const updateData = Object.assign({}, this.user, { account: updatedAccount })
+      this.$request.put('/user/update', updateData).then(res => {
+        if (res.code === '200') {
+          this.$message.success(this.$t('common.rechargeSuccess'))
+          this.rechargeDialogVisible = false
+          this.user.account = updatedAccount
+          localStorage.setItem('user', JSON.stringify(this.user))
+          this.$emit('update:user', this.user)
+          this.loadUser()
+        } else {
+          this.$message.error(res.msg || this.$t('common.rechargeFailed'))
+        }
+      }).catch(() => {
+        this.$message.error(this.$t('common.rechargeFailed'))
+      })
+    },
     loadUser() {
       if (!this.user.id || !this.user.token) {
         this.$router.push('/login')
@@ -73,13 +177,13 @@ export default {
       const token = this.user.token
       this.$request.get('/user/selectById/' + this.user.id).then(res => {
         if (res.code === '200') {
-          // 查询用户资料不会返回登录 Token，不能让接口响应覆盖本地认证信息。
           this.user = Object.assign({}, this.user, res.data, { token })
           if (!this.user.avatar) {
             this.user.avatar = createPixelAvatarId(this.user.id)
             this.saveAvatar(this.user.avatar)
           }
           localStorage.setItem('user', JSON.stringify(this.user))
+          this.$emit('update:user', this.user)
         } else {
           this.$message.error(res.msg || this.$t('common.loadFailed'))
         }
@@ -221,6 +325,69 @@ export default {
   font-size: 28px;
 }
 
+.balance-display-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 6px 14px;
+}
+
+.balance-currency-symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-right: 2px;
+}
+
+.balance-amount-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.balance-currency-unit {
+  font-size: 13px;
+  color: #16a34a;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.recharge-dialog-body {
+  padding: 8px 4px;
+}
+
+.recharge-balance-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  border: 1px solid #e2e8f0;
+}
+
+.recharge-balance-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.recharge-balance-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.quick-recharge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .form-actions {
   margin-top: 24px;
   text-align: center;
@@ -264,6 +431,10 @@ export default {
   .form-actions .el-button {
     width: 100%;
     margin: 0 !important;
+  }
+
+  .recharge-dialog >>> .el-dialog {
+    width: 92% !important;
   }
 }
 </style>

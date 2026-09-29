@@ -41,6 +41,14 @@ const i18n = new VueI18n({
         save: '保存',
         changePassword: 'パスワード変更',
         recharge: 'チャージ',
+        rechargeTitle: '残高チャージ',
+        rechargeAmount: 'チャージ金額',
+        rechargePrompt: 'チャージする金額を入力してください',
+        rechargeSuccess: 'チャージが完了しました',
+        rechargeFailed: 'チャージに失敗しました',
+        inputValidAmount: '有効な金額（1円以上）を入力してください',
+        insufficientBalance: '残高が不足しています。チャージしてください',
+        yen: '円',
         amount: '金額',
         paymentMethod: '支払い方法',
         cancel: 'キャンセル',
@@ -114,20 +122,20 @@ const i18n = new VueI18n({
         noPurchased: '購入済みの商品はありません',
         confirmPay: 'この注文を支払いますか？',
         paySuccess: '支払いが完了しました',
-        payFailed: '支払いに失敗しました'
-        ,editProduct: '商品を編集'
-        ,republishProduct: '再出品する'
-        ,deleteProduct: '商品を削除'
-        ,republishSuccess: '商品を再出品しました'
-        ,republishFailed: '商品の再出品に失敗しました'
-        ,confirmDeleteProduct: 'この商品を削除しますか？'
-        ,deleteSuccess: '商品を削除しました'
-        ,deleteFailed: '商品の削除に失敗しました'
-        ,imageOnly: '商品画像は画像形式で指定してください'
-        ,imageUploadFailed: '画像のアップロードに失敗しました'
-        ,loadFailed: '読み込みに失敗しました'
-        ,saveSuccess: '保存しました'
-        ,saveFailed: '保存に失敗しました'
+        payFailed: '支払いに失敗しました',
+        editProduct: '商品を編集',
+        republishProduct: '再出品する',
+        deleteProduct: '商品を削除',
+        republishSuccess: '商品を再出品しました',
+        republishFailed: '商品の再出品に失敗しました',
+        confirmDeleteProduct: 'この商品を削除しますか？',
+        deleteSuccess: '商品を削除しました',
+        deleteFailed: '商品の削除に失敗しました',
+        imageOnly: '商品画像は画像形式で指定してください',
+        imageUploadFailed: '画像のアップロードに失敗しました',
+        loadFailed: '読み込みに失敗しました',
+        saveSuccess: '保存しました',
+        saveFailed: '保存に失敗しました'
       }
     }
   }

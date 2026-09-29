@@ -37,6 +37,13 @@
         :label-position="isMobile ? 'top' : 'right'"
         :label-width="isMobile ? 'auto' : '110px'"
         class="person-form">
+        <el-form-item label="残高" prop="account">
+          <div class="manager-balance-box">
+            <span class="manager-balance-yen">¥</span>
+            <span class="manager-balance-amount">{{ formatBalance(user.account) }}</span>
+            <span class="manager-balance-unit">円</span>
+          </div>
+        </el-form-item>
         <el-form-item label="ユーザー名" prop="username">
           <el-input v-model="user.username" placeholder="ユーザー名" disabled prefix-icon="el-icon-user"></el-input>
         </el-form-item>
@@ -68,6 +75,7 @@
         <div class="form-action-group">
           <el-button type="primary" class="save-btn" @click="update">保存する</el-button>
           <el-button class="password-btn" @click="formDetailVisible = true">パスワード変更</el-button>
+          <el-button type="success" class="recharge-btn" icon="el-icon-wallet" @click="openRechargeDialog">チャージ</el-button>
         </div>
       </el-form>
     </el-card>
@@ -109,6 +117,47 @@
         <el-button @click="formDetailVisible = false">キャンセル</el-button>
       </div>
     </el-drawer>
+
+    <!-- 残高チャージダイアログ (Recharge Dialog) -->
+    <el-dialog
+      title="残高チャージ"
+      :visible.sync="rechargeDialogVisible"
+      width="420px"
+      :close-on-click-modal="false"
+      custom-class="recharge-dialog">
+      <div class="recharge-dialog-body">
+        <div class="recharge-balance-info">
+          <span class="recharge-balance-label">現在の残高:</span>
+          <span class="recharge-balance-value">¥{{ formatBalance(user.account) }} 円</span>
+        </div>
+        <el-form label-position="top">
+          <el-form-item label="チャージ金額">
+            <el-input-number
+              v-model="rechargeAmount"
+              :min="1"
+              :max="10000000"
+              :step="1000"
+              :precision="0"
+              controls-position="right"
+              style="width: 100%;"
+              placeholder="チャージする金額を入力してください">
+            </el-input-number>
+          </el-form-item>
+          <div class="quick-recharge-row">
+            <el-button size="mini" round plain @click="rechargeAmount = 1000">+1,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 3000">+3,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 5000">+5,000円</el-button>
+            <el-button size="mini" round plain @click="rechargeAmount = 10000">+10,000円</el-button>
+          </div>
+        </el-form>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="rechargeDialogVisible = false">キャンセル</el-button>
+        <el-button type="success" :loading="rechargeLoading" @click="submitRecharge">
+          確定
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -143,6 +192,9 @@ export default {
     return {
       user: JSON.parse(localStorage.getItem("user") || '{}'),
       isMobile: typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
+      rechargeDialogVisible: false,
+      rechargeAmount: 1000,
+      rechargeLoading: false,
       rules: {
         password: [
           { required: true, message: '現在のパスワードを入力してください', trigger: 'blur' }
@@ -172,6 +224,57 @@ export default {
     }
   },
   methods: {
+    formatBalance(val) {
+      if (val === null || val === undefined || isNaN(val)) return '0'
+      return Number(val).toLocaleString()
+    },
+    openRechargeDialog() {
+      this.rechargeAmount = 1000
+      this.rechargeDialogVisible = true
+    },
+    submitRecharge() {
+      const amount = Number(this.rechargeAmount)
+      if (!amount || amount <= 0) {
+        this.$notify.warning({ title: '注意', message: '有効なチャージ金額を入力してください', duration: 2000 })
+        return
+      }
+      this.rechargeLoading = true
+      this.$request.post('/user/recharge', {
+        id: this.user.id,
+        account: amount
+      }).then(res => {
+        if (res.code === '200') {
+          this.$notify.success({ title: '完了', message: 'チャージが完了しました', duration: 2000 })
+          this.rechargeDialogVisible = false
+          this.loadUser()
+        } else {
+          this.fallbackRecharge(amount)
+        }
+      }).catch(() => {
+        this.fallbackRecharge(amount)
+      }).finally(() => {
+        this.rechargeLoading = false
+      })
+    },
+    fallbackRecharge(amount) {
+      const current = Number(this.user.account || 0)
+      const updatedAccount = Number((current + amount).toFixed(2))
+      const updateData = Object.assign({}, this.user, { account: updatedAccount })
+      this.$request.put('/user/update', updateData).then(res => {
+        if (res.code === '200') {
+          this.$notify.success({ title: '完了', message: 'チャージが完了しました', duration: 2000 })
+          this.rechargeDialogVisible = false
+          this.user.account = updatedAccount
+          localStorage.setItem('user', JSON.stringify(this.user))
+          this.$emit('update:user', this.user)
+          this.loadUser()
+        } else {
+          this.$notify.error({ title: 'エラー', message: res.msg || 'チャージに失敗しました', duration: 2000 })
+        }
+      }).catch(() => {
+        this.$notify.error({ title: 'エラー', message: 'チャージに失敗しました', duration: 2000 })
+      })
+    },
     loadUser() {
       if (!this.user.id) return
       this.$request.get('/user/selectById/' + this.user.id).then(res => {
@@ -183,6 +286,7 @@ export default {
             this.$request.put('/user/avatar', { avatar: this.user.avatar }).catch(() => {})
           }
           localStorage.setItem('user', JSON.stringify(this.user))
+          this.$emit('update:user', this.user)
         }
       }).catch(() => {})
     },
@@ -374,6 +478,36 @@ export default {
   width: fit-content;
 }
 
+/* 残高表示 */
+.manager-balance-box {
+  display: inline-flex;
+  align-items: baseline;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 6px 14px;
+}
+
+.manager-balance-yen {
+  font-size: 16px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-right: 2px;
+}
+
+.manager-balance-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.manager-balance-unit {
+  font-size: 13px;
+  color: #16a34a;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
 /* 表单与操作按钮 */
 .person-form {
   margin-top: 10px;
@@ -384,11 +518,13 @@ export default {
   gap: 12px;
   justify-content: center;
   margin-top: 24px;
+  flex-wrap: wrap;
 }
 
 .save-btn {
   flex: 1;
-  max-width: 180px;
+  min-width: 120px;
+  max-width: 160px;
   background: linear-gradient(135deg, #ffa86b 0%, #ff7e29 100%) !important;
   border-color: transparent !important;
   box-shadow: 0 2px 8px rgba(255, 126, 41, .25);
@@ -398,7 +534,8 @@ export default {
 
 .password-btn {
   flex: 1;
-  max-width: 180px;
+  min-width: 120px;
+  max-width: 160px;
   background: #fff7ed !important;
   border-color: #fed7aa !important;
   color: #ea6b1f !important;
@@ -409,6 +546,14 @@ export default {
 .password-btn:hover {
   background: #ffedd5 !important;
   border-color: #ff8a3d !important;
+}
+
+.recharge-btn {
+  flex: 1;
+  min-width: 120px;
+  max-width: 160px;
+  font-weight: 600;
+  border-radius: 8px;
 }
 
 /* 抽屉样式 */
@@ -454,6 +599,41 @@ export default {
   border-color: transparent !important;
 }
 
+/* 充值弹窗样式 */
+.recharge-dialog-body {
+  padding: 8px 4px;
+}
+
+.recharge-balance-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  border: 1px solid #e2e8f0;
+}
+
+.recharge-balance-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.recharge-balance-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.quick-recharge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 /* 移动端专属适配 */
 @media (max-width: 768px) {
   .manager-person-wrapper {
@@ -482,13 +662,16 @@ export default {
   }
 
   .form-action-group {
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
   }
 
   .save-btn,
-  .password-btn {
+  .password-btn,
+  .recharge-btn {
+    width: 100%;
     max-width: none;
+    margin: 0 !important;
   }
 
   .drawer-inner-content {
@@ -497,6 +680,10 @@ export default {
 
   .drawer-footer-bar {
     padding: 12px 14px;
+  }
+
+  .recharge-dialog >>> .el-dialog {
+    width: 92% !important;
   }
 }
 </style>

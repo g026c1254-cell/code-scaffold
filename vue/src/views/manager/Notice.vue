@@ -15,7 +15,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="name" label="お知らせタイトル" :show-overflow-tooltip="true"></el-table-column>
-        <el-table-column prop="content" label="お知らせ内容" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column label="お知らせ内容" min-width="260" :show-overflow-tooltip="true">
+          <template v-slot="scope">
+            <span>{{ stripHtml(scope.row.content) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="time" label="追加日時" :show-overflow-tooltip="true"></el-table-column>
         <el-table-column prop="userId" label="追加者ID"></el-table-column>
         <el-table-column prop="userName" label="投稿者" :show-overflow-tooltip="true"></el-table-column>
@@ -43,13 +47,13 @@
     </el-card>
 
     <!-- 新增 | 编辑弹框 -->
-    <el-dialog title="情報" :visible.sync="fromVisible" width="30%">
-      <el-form :model="form" label-width="80px" style="padding-right: 20px" :rules="rules" ref="formRef">
-        <el-form-item label="お知らせタイトル" prop="name">
+    <el-dialog title="情報" :visible.sync="fromVisible" width="40%">
+      <el-form :model="form" label-width="100px" style="padding-right: 20px" :rules="rules" ref="formRef">
+        <el-form-item label="タイトル" prop="name">
           <el-input v-model="form.name" placeholder="お知らせタイトル"></el-input>
         </el-form-item>
-        <el-form-item label="お知らせ内容" prop="content">
-          <el-input type="textarea" v-model="form.content" placeholder="お知らせ内容"></el-input>
+        <el-form-item label="内容" prop="content">
+          <el-input type="textarea" :rows="6" v-model="form.content" placeholder="お知らせ内容を入力してください（HTML対応）"></el-input>
         </el-form-item>
       </el-form>
 
@@ -59,10 +63,10 @@
       </div>
     </el-dialog>
 
-    <!-- 详情内容 -->
+    <!-- 详情内容（富文本正常格式呈现） -->
     <el-drawer :visible.sync="formDetailVisible" title="詳細" :with-header="false">
       <div class="drawer-header">
-        <span class="drawer-title">詳細</span>
+        <span class="drawer-title">お知らせ詳細</span>
         <div class="drawer-actions">
           <el-tooltip placement="top" :content="isFullscreen ? '全画面を終了' : '全画面'">
             <el-button icon="el-icon-full-screen" size="mini" circle @click="toggleFullscreen"/>
@@ -73,12 +77,13 @@
 
       <!-- 抽屉内容 -->
       <div class="drawer-content" ref="drawerContent">
-        <el-form label-width="100px" style="padding-right: 40px" :model="form">
+        <el-form label-width="110px" style="padding-right: 20px" :model="form">
           <el-form-item label="お知らせタイトル" prop="name">
-            <div>{{form.name}}</div>
+            <div style="font-weight: 600; font-size: 15px; color: #1e293b;">{{form.name}}</div>
           </el-form-item>
           <el-form-item label="お知らせ内容" prop="content">
-            <div>{{form.content}}</div>
+            <!-- 正常格式解析并呈现 -->
+            <div class="notice-detail-content" v-html="formatNoticeContent(form.content)"></div>
           </el-form-item>
           <el-form-item label="追加日時" prop="time">
             <div>{{form.time}}</div>
@@ -102,7 +107,7 @@
 
 <script>
 export default {
-  name: "Type",
+  name: "Notice",
   data() {
     return {
       tableData: [],
@@ -117,6 +122,9 @@ export default {
       rules: {
         name: [
           {required: true, message: 'お知らせタイトルを入力してください', trigger: 'blur'},
+        ],
+        content: [
+          {required: true, message: 'お知らせ内容を入力してください', trigger: 'blur'},
         ]
       },
       isFullscreen: false,
@@ -128,6 +136,17 @@ export default {
     this.load()
   },
   methods: {
+    stripHtml(str) {
+      if (!str) return ''
+      return str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+    },
+    formatNoticeContent(content) {
+      if (!content) return ''
+      if (/<[a-z][\s\S]*>/i.test(content)) {
+        return content
+      }
+      return content.replace(/\r?\n/g, '<br>')
+    },
     load(pageNum) {
       if (pageNum) this.pageNum = pageNum
       this.$request.get('/notice/selectPage', {
@@ -197,9 +216,6 @@ export default {
       this.pageSize = pageSize
       this.load()
     },
-    handleAvatarSuccess(response, file, fileList) {
-      this.form.avatar = response.data
-    },
     handleFullscreenChange() {
       if (!document.fullscreenElement && this.isFullscreen) {
         this.isFullscreen = false;
@@ -263,5 +279,75 @@ export default {
 </script>
 
 <style scoped>
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #faf8f5;
+}
 
+.drawer-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.drawer-content {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+}
+
+.drawer-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #faf8f5;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 通知内容富文本正常格式化展示 */
+.notice-detail-content {
+  line-height: 1.7;
+  color: #334155;
+  font-size: 14px;
+  word-break: break-word;
+  background: #f8fafc;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.notice-detail-content >>> img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 6px 0;
+}
+
+.notice-detail-content >>> p {
+  margin: 6px 0;
+}
+
+.notice-detail-content >>> table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.notice-detail-content >>> th,
+.notice-detail-content >>> td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+}
 </style>

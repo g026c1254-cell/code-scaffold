@@ -1,6 +1,28 @@
 <template>
   <div class="form-container">
     <section class="account-sections">
+      <!-- ユーザー情報 & 残高サマリー -->
+      <div class="user-summary-card">
+        <div class="user-info-section">
+          <img :src="getImageUrl(user.avatar)" class="user-summary-avatar" @error="handleImageError">
+          <div class="user-summary-details">
+            <div class="user-summary-name">{{ user.name || user.username }}</div>
+            <div class="user-summary-role">{{ user.role === 'ADMIN' ? 'システム管理者' : '一般ユーザー' }}</div>
+          </div>
+        </div>
+        <div class="user-balance-section">
+          <div class="balance-title">{{ $t('common.balance') }}</div>
+          <div class="balance-content">
+            <span class="balance-yen-sign">¥</span>
+            <span class="balance-num">{{ Number(user.account || 0).toLocaleString() }}</span>
+            <span class="balance-yen-unit">{{ $t('common.yen') }}</span>
+            <el-button type="success" size="mini" plain icon="el-icon-wallet" class="person-recharge-btn" @click="$router.push('/front/profile')">
+              {{ $t('common.recharge') }}
+            </el-button>
+          </div>
+        </div>
+      </div>
+
       <el-card class="account-card">
         <el-tabs v-model="activeSection" @tab-click="handleSectionChange">
           <el-tab-pane :label="$t('common.myProducts')" name="products">
@@ -241,6 +263,7 @@ export default {
       this.$router.push('/login')
       return
     }
+    this.loadUser()
     this.loadActivity()
   },
   beforeDestroy() {
@@ -248,6 +271,16 @@ export default {
     if (this.noticeEditor) this.noticeEditor.destroy()
   },
   methods: {
+    loadUser() {
+      if (!this.user.id) return
+      this.$request.get('/user/selectById/' + this.user.id).then(res => {
+        if (res.code === '200' && res.data) {
+          const token = this.user.token
+          this.user = Object.assign({}, this.user, res.data, { token })
+          localStorage.setItem('user', JSON.stringify(this.user))
+        }
+      }).catch(() => {})
+    },
     configureEditor() {
       this.editorConfig.MENU_CONF.uploadImage.server = this.$baseUrl + '/file/editor/upload'
       const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -440,8 +473,13 @@ export default {
           if (res.code === '200') {
             this.$message.success(this.$t('common.paySuccess'))
             this.loadOrders()
+            this.loadUser()
           } else {
-            this.$message.error(res.msg || this.$t('common.payFailed'))
+            let msg = res.msg || this.$t('common.payFailed')
+            if (msg.indexOf('余额不足') !== -1 || msg.indexOf('残高が不足') !== -1) {
+              msg = '残高が不足しています。チャージしてください'
+            }
+            this.$message.error(msg)
           }
         })
       }).catch(() => {})
@@ -477,6 +515,108 @@ export default {
 .account-sections {
   width: min(1180px, 94%);
   margin: 0 auto 40px;
+}
+
+/* ユーザー概要 & 残高バー */
+.user-summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, .8);
+  border-radius: 16px;
+  padding: 18px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, .06);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.user-info-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-summary-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fed7aa;
+  background: #fff7ed;
+}
+
+.user-summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-summary-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.user-summary-role {
+  font-size: 12px;
+  color: #ea6b1f;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 2px 8px;
+  border-radius: 10px;
+  width: fit-content;
+  font-weight: 600;
+}
+
+.user-balance-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.balance-title {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.balance-content {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.balance-yen-sign {
+  font-size: 16px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.balance-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.balance-yen-unit {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.person-recharge-btn {
+  border-color: #86efac !important;
+  color: #15803d !important;
+  background: #f0fdf4 !important;
+}
+
+.person-recharge-btn:hover {
+  background: #dcfce7 !important;
+  border-color: #4ade80 !important;
 }
 
 .account-card {
@@ -599,6 +739,18 @@ export default {
     width: 100%;
   }
 
+  .user-summary-card {
+    padding: 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-balance-section {
+    align-items: flex-start;
+    padding-top: 10px;
+    border-top: 1px dashed #f1f5f9;
+  }
+
   .account-card >>> .el-tabs__nav-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -637,69 +789,69 @@ export default {
   }
 
   .category-chips-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 100%;
-}
-
-.category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  background: transparent !important;
-  background-color: transparent !important;
-  border: 1px solid #fed7aa;
-  border-radius: 18px;
-  font-size: 13px;
-  color: #475569;
-  cursor: pointer;
-  box-shadow: none !important;
-  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.category-chip:hover {
-  border-color: #ff8a3d;
-  color: #ff8a3d;
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
-.category-chip.is-selected {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: 2px solid #ff8a3d !important;
-  color: #ea6b1f;
-  font-weight: 700;
-  box-shadow: none !important;
-}
-
-.category-chip .check-mark {
-  font-size: 12px;
-  font-weight: bold;
-  color: #ff8a3d;
-}
-
-@media (max-width: 520px) {
-  .category-chips-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+    width: 100%;
   }
 
   .category-chip {
-    justify-content: center;
-    padding: 10px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid #fed7aa;
+    border-radius: 18px;
     font-size: 13px;
-    border-radius: 10px;
-    text-align: center;
+    color: #475569;
+    cursor: pointer;
+    box-shadow: none !important;
+    transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
-}
 
-/* 移动端弹窗响应式样式 */
+  .category-chip:hover {
+    border-color: #ff8a3d;
+    color: #ff8a3d;
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  .category-chip.is-selected {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 2px solid #ff8a3d !important;
+    color: #ea6b1f;
+    font-weight: 700;
+    box-shadow: none !important;
+  }
+
+  .category-chip .check-mark {
+    font-size: 12px;
+    font-weight: bold;
+    color: #ff8a3d;
+  }
+
+  @media (max-width: 520px) {
+    .category-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .category-chip {
+      justify-content: center;
+      padding: 10px 6px;
+      font-size: 13px;
+      border-radius: 10px;
+      text-align: center;
+    }
+  }
+
+  /* 移动端弹窗响应式样式 */
   .mobile-dialog >>> .el-dialog {
     width: 94% !important;
     max-width: 520px;
@@ -791,5 +943,4 @@ export default {
   color: #9a3412;
   margin-top: 2px;
 }
-
 </style>

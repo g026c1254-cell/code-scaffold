@@ -47,6 +47,9 @@ export default {
       } else if (value === this.user.password) {
         callback(new Error('新しいパスワードは現在のパスワードと異なるものにしてください'));
       } else {
+        if (this.user.confirmPassword) {
+          this.$refs.formRef.validateField('confirmPassword');
+        }
         callback();
       }
     };
@@ -64,23 +67,33 @@ export default {
       }
     };
   },
+  created() {
+    const user = JSON.parse(localStorage.getItem("user") || '{}')
+    if (!user.id) {
+      this.$router.push('/login')
+      return
+    }
+    this.user.id = user.id
+  },
   methods: {
     resetForm() {
-      this.$refs.formRef.resetFields();
+      if (this.$refs.formRef) {
+        this.$refs.formRef.resetFields();
+      }
     },
     update() {
       this.$refs.formRef.validate(async (valid) => {
         if (valid) {
           try {
             const submitData = {
-              id: this.user.id,
+              id: this.user.id || JSON.parse(localStorage.getItem("user") || '{}').id,
               newPassword: this.user.newPassword,
               password: this.user.password
             };
 
             const res = await this.$request.post('/user/password', submitData);
             if (res.code === '200') {
-              this.$notify.warning({title: '完了', message: 'パスワードを変更しました。再度ログインしてください', showClose: false, duration: 2000});
+              this.$notify.success({title: '完了', message: 'パスワードを変更しました。再度ログインしてください', showClose: false, duration: 2000});
 
               // 清除本地存储的用户信息，确保安全退出
               localStorage.removeItem('user');
@@ -137,7 +150,7 @@ export default {
   background-color: #fff;
 }
 
-/deep/.el-form-item__label {
+.password-form >>> .el-form-item__label {
   font-weight: 500;
   color: #475569;
 }
@@ -159,11 +172,11 @@ export default {
     padding: 16px 12px;
   }
 
-  /deep/ .el-form-item {
+  .password-form >>> .el-form-item {
     margin-bottom: 18px;
   }
 
-  /deep/ .el-form-item__label {
+  .password-form >>> .el-form-item__label {
     float: none;
     display: block;
     width: 100% !important;
@@ -173,7 +186,7 @@ export default {
     font-size: 13px;
   }
 
-  /deep/ .el-form-item__content {
+  .password-form >>> .el-form-item__content {
     margin-left: 0 !important;
   }
 
