@@ -27,111 +27,56 @@
           <el-button class="notice-primary-button" size="mini" @click="openGoodsDialog">{{ $t('common.publishProduct') }}</el-button>
         </div>
       </div>
-      <div v-if="notices.length" class="notice-list">
-        <article v-for="(item, index) in notices" :key="item.id || index" class="notice-item">
-          <button class="notice-item-header" type="button" @click="toggleNotice(index)">
-            <span class="notice-date">{{ formatNoticeDate(item.time) }}</span>
-            <span class="notice-category">{{ noticeCategory(item) }}</span>
-            <span class="notice-item-title">{{ item.name }}</span>
-            <span class="notice-header-stats">
-              <span class="header-stat" title="閲覧数"><i class="el-icon-view"></i> {{ item.views || 0 }}</span>
-              <span class="header-stat" :class="{ 'is-liked': item.isLiked }" title="いいね"><i class="el-icon-star-on"></i> {{ item.likes || 0 }}</span>
-              <span class="header-stat" title="コメント数"><i class="el-icon-chat-round"></i> {{ (commentsMap[item.id] || []).length || 0 }}</span>
-            </span>
-            <i class="el-icon-arrow-down notice-arrow" :class="{ 'is-open': isNoticeActive(index) }"></i>
-          </button>
-          <div v-show="isNoticeActive(index)" class="notice-item-body">
-            <div class="notice-content" v-html="item.content"></div>
 
-            <!-- 互动操作与发布者信息行 -->
-            <div class="notice-action-bar">
-              <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
-              <div class="notice-interactive-stats">
-                <span class="stat-badge view-badge" title="閲覧数">
-                  <i class="el-icon-view"></i>
-                  <span>{{ item.views || 0 }} 閲覧</span>
+      <!-- 公告卡片网格列表 (Notice Cards Grid) -->
+      <div v-if="notices.length" class="notice-cards-grid">
+        <article
+          v-for="(item, index) in notices"
+          :key="item.id || index"
+          class="notice-card-item"
+          @click="openNoticeDetail(item)"
+        >
+          <div class="notice-card-cover-wrap">
+            <img
+              :src="getNoticeImage(item)"
+              class="notice-card-cover"
+              @error="handleNoticeImageError"
+              alt="Notice cover"
+            />
+            <span class="notice-card-badge">{{ noticeCategory(item) }}</span>
+            <span class="notice-card-date">{{ formatNoticeDate(item.time) }}</span>
+          </div>
+
+          <div class="notice-card-body">
+            <h3 class="notice-card-title" :title="item.name">
+              {{ item.name }}
+            </h3>
+            <p class="notice-card-snippet" :title="stripHtml(item.content)">
+              {{ stripHtml(item.content) }}
+            </p>
+
+            <div class="notice-card-meta">
+              <div class="notice-card-author" :title="item.userName || $t('common.anonymous')">
+                <i class="el-icon-user"></i>
+                <span>{{ item.userName || $t('common.anonymous') }}</span>
+              </div>
+              <div class="notice-card-stats">
+                <span class="card-stat" title="閲覧数">
+                  <i class="el-icon-view"></i> {{ item.views || 0 }}
                 </span>
                 <button
                   type="button"
-                  class="like-btn"
+                  class="card-like-btn"
                   :class="{ 'is-liked': item.isLiked }"
                   @click.stop="handleLike(item)"
                   title="いいね"
                 >
                   <i :class="item.isLiked ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
-                  <span>{{ item.isLiked ? 'いいね済' : 'いいね' }} ({{ item.likes || 0 }})</span>
+                  <span>{{ item.likes || 0 }}</span>
                 </button>
-              </div>
-            </div>
-
-            <!-- 评论区模块 -->
-            <div class="notice-comment-section">
-              <div class="comment-section-header">
-                <span class="comment-section-title">
-                  <i class="el-icon-chat-dot-round"></i> コメント
-                  <span class="comment-count-badge">({{ (commentsMap[item.id] || []).length }})</span>
+                <span class="card-stat" title="コメント数">
+                  <i class="el-icon-chat-round"></i> {{ (commentsMap[item.id] || []).length || 0 }}
                 </span>
-              </div>
-
-              <!-- 评论输入框 -->
-              <div class="comment-input-box">
-                <el-input
-                  type="textarea"
-                  :rows="2"
-                  :placeholder="user && user.id ? 'コメントを入力してください...' : 'コメントを投稿するにはログインしてください'"
-                  v-model="commentInputs[item.id]"
-                  maxlength="300"
-                  show-word-limit
-                  :disabled="!user || !user.id"
-                ></el-input>
-                <div class="comment-submit-row">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    class="comment-submit-btn"
-                    :disabled="!user || !user.id"
-                    @click="submitComment(item.id)"
-                  >
-                    コメント送信
-                  </el-button>
-                </div>
-              </div>
-
-              <!-- 评论列表 -->
-              <div class="comment-list" v-loading="commentsLoading[item.id]">
-                <div
-                  v-for="comment in (commentsMap[item.id] || [])"
-                  :key="comment.id"
-                  class="comment-item"
-                >
-                  <img
-                    :src="getImageUrl(comment.userAvatar)"
-                    class="comment-avatar"
-                    @error="handleImageError"
-                  />
-                  <div class="comment-content-wrap">
-                    <div class="comment-meta">
-                      <span class="comment-username">{{ comment.userName }}</span>
-                      <span class="comment-time">{{ formatCommentTime(comment.createTime) }}</span>
-                      <el-button
-                        v-if="user && user.id && (user.id === comment.userId || user.role === 'ADMIN')"
-                        type="text"
-                        size="mini"
-                        class="comment-del-btn"
-                        @click="deleteComment(item.id, comment.id)"
-                      >
-                        削除
-                      </el-button>
-                    </div>
-                    <div class="comment-text">{{ comment.content }}</div>
-                  </div>
-                </div>
-                <div
-                  v-if="!commentsLoading[item.id] && (!commentsMap[item.id] || commentsMap[item.id].length === 0)"
-                  class="no-comments-tip"
-                >
-                  まだコメントがありません。最初のコメントを投稿しましょう！
-                </div>
               </div>
             </div>
           </div>
@@ -140,10 +85,137 @@
       <el-empty v-else :description="$t('common.noNotice')"></el-empty>
     </section>
 
+    <!-- 公告详情与评论互动弹窗 (Notice Detail Dialog) -->
+    <el-dialog
+      class="mobile-publish-dialog notice-detail-dialog"
+      :visible.sync="noticeDetailVisible"
+      width="680px"
+      :close-on-click-modal="true"
+    >
+      <div v-if="selectedNotice" class="modal-notice-container">
+        <div class="modal-notice-header">
+          <div class="modal-notice-tags">
+            <span class="modal-category-tag">{{ noticeCategory(selectedNotice) }}</span>
+            <span class="modal-date-tag">{{ formatNoticeDate(selectedNotice.time) }}</span>
+          </div>
+          <h2 class="modal-notice-title">{{ selectedNotice.name }}</h2>
+          <div class="modal-author-row">
+            <span class="modal-author"><i class="el-icon-user"></i> {{ $t('common.publisher') }}：{{ selectedNotice.userName || $t('common.anonymous') }}</span>
+            <div class="modal-header-stats">
+              <span class="modal-stat"><i class="el-icon-view"></i> {{ selectedNotice.views || 0 }} 閲覧</span>
+              <button
+                type="button"
+                class="like-btn"
+                :class="{ 'is-liked': selectedNotice.isLiked }"
+                @click="handleLike(selectedNotice)"
+              >
+                <i :class="selectedNotice.isLiked ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
+                <span>{{ selectedNotice.isLiked ? 'いいね済' : 'いいね' }} ({{ selectedNotice.likes || 0 }})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <el-divider></el-divider>
+
+        <div class="modal-notice-content" v-html="selectedNotice.content"></div>
+
+        <!-- 评论区模块 -->
+        <div class="notice-comment-section">
+          <div class="comment-section-header">
+            <span class="comment-section-title">
+              <i class="el-icon-chat-dot-round"></i> コメント
+              <span class="comment-count-badge">({{ (commentsMap[selectedNotice.id] || []).length }})</span>
+            </span>
+          </div>
+
+          <!-- 评论输入框 -->
+          <div class="comment-input-box">
+            <el-input
+              type="textarea"
+              :rows="2"
+              :placeholder="user && user.id ? 'コメントを入力してください...' : 'コメントを投稿するにはログインしてください'"
+              v-model="commentInputs[selectedNotice.id]"
+              maxlength="300"
+              show-word-limit
+              :disabled="!user || !user.id"
+            ></el-input>
+            <div class="comment-submit-row">
+              <el-button
+                type="primary"
+                size="small"
+                class="comment-submit-btn"
+                :disabled="!user || !user.id"
+                @click="submitComment(selectedNotice.id)"
+              >
+                コメント送信
+              </el-button>
+            </div>
+          </div>
+
+          <!-- 评论列表 -->
+          <div class="comment-list" v-loading="commentsLoading[selectedNotice.id]">
+            <div
+              v-for="comment in (commentsMap[selectedNotice.id] || [])"
+              :key="comment.id"
+              class="comment-item"
+            >
+              <img
+                :src="getImageUrl(comment.userAvatar)"
+                class="comment-avatar"
+                @error="handleImageError"
+              />
+              <div class="comment-content-wrap">
+                <div class="comment-meta">
+                  <span class="comment-username">{{ comment.userName }}</span>
+                  <span class="comment-time">{{ formatCommentTime(comment.createTime) }}</span>
+                  <el-button
+                    v-if="user && user.id && (user.id === comment.userId || user.role === 'ADMIN')"
+                    type="text"
+                    size="mini"
+                    class="comment-del-btn"
+                    @click="deleteComment(selectedNotice.id, comment.id)"
+                  >
+                    削除
+                  </el-button>
+                </div>
+                <div class="comment-text">{{ comment.content }}</div>
+              </div>
+            </div>
+            <div
+              v-if="!commentsLoading[selectedNotice.id] && (!commentsMap[selectedNotice.id] || commentsMap[selectedNotice.id].length === 0)"
+              class="no-comments-tip"
+            >
+              まだコメントがありません。最初のコメントを投稿しましょう！
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
     <el-dialog class="mobile-publish-dialog notice-publish-dialog" :title="$t('common.publishNotice')" :visible.sync="noticeDialogVisible" width="460px" :close-on-click-modal="false">
       <el-form ref="noticeForm" :model="noticeForm" :rules="noticeRules" label-width="80px">
         <el-form-item :label="$t('common.title')" prop="name">
           <el-input v-model="noticeForm.name" maxlength="100" show-word-limit :placeholder="$t('common.title')"></el-input>
+        </el-form-item>
+        <el-form-item label="カバー画像">
+          <el-upload
+            action=""
+            :http-request="uploadNoticeCover"
+            :show-file-list="false"
+            accept="image/*">
+            <div v-if="noticeForm.cover" class="cover-preview-wrapper" style="width: 150px; height: 85px;">
+              <img :src="getImageUrl(noticeForm.cover)" class="goods-cover-preview">
+              <div class="cover-overlay">
+                <i class="el-icon-camera"></i>
+                <span>変更</span>
+              </div>
+            </div>
+            <div v-else class="upload-placeholder-card" style="width: 150px; height: 85px; padding: 10px;">
+              <i class="el-icon-upload upload-icon" style="font-size: 22px;"></i>
+              <div class="upload-tip-text" style="font-size: 11px;">画像を選択</div>
+            </div>
+          </el-upload>
         </el-form-item>
         <el-form-item :label="$t('common.content')" prop="content">
           <div class="notice-editor">
@@ -239,7 +311,7 @@
       </div>
     </el-dialog>
 
-    <div style="margin-top: 30px">
+    <div style="margin-top: 32px">
       <div class="section-heading">
         <div class="section-title section-title-accent">
           <h1>{{ $t('common.newArrivals') }}</h1>
@@ -248,31 +320,44 @@
           <el-link @click="goPage('/front/goods')" :underline="false">{{ $t('common.viewMore') }}</el-link>
         </div>
       </div>
-      <div>
-        <el-row :gutter="20">
-          <el-col :xs="12" :sm="8" :md="6" v-for="(item,index) in timeGoods" :key="index" class="goods-col">
-            <el-card :body-style="{ padding: '0px' }" class="card-item" @click.native="goGoodsDetail(item.id)">
-              <img :src="getImageUrl(item.cover)" alt="" @error="handleImageError" class="goods-image">
-              <div class="goods-content">
-                <div class="goods-name">
-                  {{item.name}}
-                </div>
-                <div class="goods-descr">
-                  {{ stripHtml(item.content || item.descr) }}
-                </div>
-                <div class="goods-meta">
-                  <div class="goods-price">{{item.price}}円</div>
-                </div>
-                <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
-    </div>
 
-  </div>
-</template>
+      <!-- 固定大小并严格对齐，固定显示2行的商品网格 -->
+      <div v-if="displayedTimeGoods.length" class="goods-grid-container">
+        <div
+          v-for="(item, index) in displayedTimeGoods"
+          :key="item.id || index"
+          class="compact-goods-card"
+          @click="goGoodsDetail(item.id)"
+        >
+          <div class="compact-goods-thumb">
+            <img
+              :src="getImageUrl(item.cover)"
+              :alt="item.name"
+              @error="handleImageError"
+              class="compact-goods-img"
+            />
+          </div>
+          <div class="compact-goods-info">
+            <div class="compact-goods-name" :title="item.name">
+              {{ item.name }}
+            </div>
+            <div class="compact-goods-descr" :title="stripHtml(item.content || item.descr) || ''">
+              {{ stripHtml(item.content || item.descr) || '' }}
+            </div>
+            <div class="compact-goods-footer">
+              <div class="compact-goods-price">
+                <span class="price-val">{{ item.price }}円</span>
+              </div>
+              <div class="compact-goods-user" :title="item.userName || $t('common.anonymous')">
+                <i class="el-icon-user"></i>
+                <span class="user-text">{{ item.userName || $t('common.anonymous') }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <el-empty v-else :description="$t('common.noData')"></el-empty>
+    </div>  </div></template>
 
 <script>
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
@@ -290,9 +375,13 @@ export default {
       user: JSON.parse(localStorage.getItem('user') || '{}'),
       noticeDialogVisible: false,
       goodsDialogVisible: false,
+      goodsCols: 4,
+      noticeDetailVisible: false,
+      selectedNotice: null,
       noticeForm: {
         name: '',
-        content: ''
+        content: '',
+        cover: ''
       },
       goodsForm: {
         name: '',
@@ -335,6 +424,12 @@ export default {
       carouselTouchStartX: 0
     }
   },
+  computed: {
+    displayedTimeGoods() {
+      const maxItems = this.goodsCols * 2
+      return this.timeGoods.slice(0, maxItems)
+    }
+  },
   created() {
     this.configureEditor()
     this.loadType()
@@ -342,14 +437,81 @@ export default {
     this.loadTimeGoods()
     this.loadNotice()
     this.updateCarouselHeight()
-    window.addEventListener('resize', this.updateCarouselHeight)
+    this.updateGoodsCols()
+    window.addEventListener('resize', this.handleWindowResize)
   },
   beforeDestroy() {
     if (this.editor) this.editor.destroy()
     if (this.noticeEditor) this.noticeEditor.destroy()
-    window.removeEventListener('resize', this.updateCarouselHeight)
+    window.removeEventListener('resize', this.handleWindowResize)
   },
   methods: {
+    handleWindowResize() {
+      this.updateCarouselHeight()
+      this.updateGoodsCols()
+    },
+    updateGoodsCols() {
+      const width = window.innerWidth
+      if (width >= 768) {
+        this.goodsCols = 4
+      } else {
+        this.goodsCols = 2
+      }
+    },
+    openNoticeDetail(item) {
+      this.selectedNotice = item
+      this.noticeDetailVisible = true
+      if (item && item.id) {
+        this.$request.get(`/notice/selectById/${item.id}`).then(res => {
+          if (res.code === '200' && res.data) {
+            this.$set(item, 'views', res.data.views)
+            this.$set(item, 'likes', res.data.likes)
+            if (typeof res.data.isLiked === 'boolean') {
+              this.$set(item, 'isLiked', res.data.isLiked)
+            }
+            if (this.selectedNotice && this.selectedNotice.id === item.id) {
+              this.$set(this.selectedNotice, 'views', res.data.views)
+              this.$set(this.selectedNotice, 'likes', res.data.likes)
+              this.$set(this.selectedNotice, 'isLiked', res.data.isLiked)
+            }
+          }
+        })
+        this.loadComments(item.id)
+      }
+    },
+    getNoticeImage(item) {
+      if (!item) return require('@/assets/bg1.jpeg')
+      if (item.cover) return this.getImageUrl(item.cover)
+      if (item.img) return this.getImageUrl(item.img)
+      if (item.content) {
+        const match = item.content.match(/<img[^>]+src=["']([^"']+)["']/i)
+        if (match && match[1]) {
+          return this.getImageUrl(match[1])
+        }
+      }
+      const defaultCovers = [
+        require('@/assets/bg1.jpeg'),
+        require('@/assets/bg2.jpg')
+      ]
+      return defaultCovers[(item.id || 0) % defaultCovers.length]
+    },
+    handleNoticeImageError(e) {
+      e.target.src = require('@/assets/bg1.jpeg')
+    },
+    uploadNoticeCover(options) {
+      const formData = new FormData()
+      formData.append('file', options.file)
+      this.$request.post('/file/upload', formData).then(res => {
+        if (res.code === '200') {
+          this.$set(this.noticeForm, 'cover', res.data)
+          this.$message.success('カバー画像をアップロードしました')
+        } else {
+          this.$message.error(res.msg || 'アップロードに失敗しました')
+        }
+      }).catch(() => {
+        this.$message.error('アップロードに失敗しました')
+      })
+    },
     configureEditor() {
       this.editorConfig.MENU_CONF.uploadImage.server = this.$baseUrl + '/file/editor/upload'
       const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -451,6 +613,10 @@ export default {
         if (res.code === '200' && res.data) {
           this.$set(item, 'isLiked', res.data.isLiked)
           this.$set(item, 'likes', res.data.likes)
+          if (this.selectedNotice && this.selectedNotice.id === item.id) {
+            this.$set(this.selectedNotice, 'isLiked', res.data.isLiked)
+            this.$set(this.selectedNotice, 'likes', res.data.likes)
+          }
           this.$message.success(res.data.isLiked ? 'いいねしました' : 'いいねを取り消しました')
         } else {
           this.$message.error(res.msg || '操作に失敗しました')
@@ -584,7 +750,14 @@ export default {
           this.$message.error(this.$t('common.content'))
           return
         }
-        this.$request.post('/notice/add', this.noticeForm).then(res => {
+        let payloadContent = this.noticeForm.content
+        if (this.noticeForm.cover && !payloadContent.includes(this.noticeForm.cover)) {
+          payloadContent = `<p><img src="${this.getImageUrl(this.noticeForm.cover)}" style="max-width: 100%; border-radius: 8px; margin-bottom: 12px;" /></p>` + payloadContent
+        }
+        this.$request.post('/notice/add', {
+          name: this.noticeForm.name,
+          content: payloadContent
+        }).then(res => {
           if (res.code === '200') {
             this.$message.success('お知らせを投稿しました')
             this.noticeDialogVisible = false
@@ -1589,4 +1762,428 @@ export default {
   margin-top: 2px;
 }
 
+
+/* ==================== 公告卡片网格样式 (Notice Cards Grid) ==================== */
+.notice-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+
+@media (max-width: 992px) {
+  .notice-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .notice-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.notice-card-item {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.notice-card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(255, 126, 41, 0.12);
+  border-color: #ffd8be;
+}
+
+.notice-card-cover-wrap {
+  width: 100%;
+  height: 140px;
+  position: relative;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.notice-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+
+.notice-card-item:hover .notice-card-cover {
+  transform: scale(1.05);
+}
+
+.notice-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 8px;
+  background: rgba(255, 126, 41, 0.9);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.notice-card-date {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.65);
+  color: #ffffff;
+  font-size: 11px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.notice-card-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.notice-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  height: 42px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  word-break: break-all;
+  transition: color .2s ease;
+}
+
+.notice-card-item:hover .notice-card-title {
+  color: #ff7e29;
+}
+
+.notice-card-snippet {
+  margin: 6px 0 12px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+  height: 36px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
+
+.notice-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.notice-card-author {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.card-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.card-like-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.card-like-btn:hover {
+  color: #ff7e29;
+  transform: scale(1.1);
+}
+
+.card-like-btn.is-liked {
+  color: #ff7e29;
+  font-weight: 600;
+}
+
+/* ==================== 公告弹窗详情样式 ==================== */
+.modal-notice-container {
+  padding: 4px 6px;
+}
+
+.modal-notice-header {
+  margin-bottom: 12px;
+}
+
+.modal-notice-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.modal-category-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff7e29;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.modal-date-tag {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.modal-notice-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.modal-author-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal-author {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.modal-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-stat {
+  font-size: 13px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modal-notice-content {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  word-break: break-word;
+}
+
+.modal-notice-content >>> img {
+  max-width: 100% !important;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* ==================== 固定大小严格对齐且固定2行的商品网格样式 (4列x2行=8个) ==================== */
+.goods-grid-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+
+@media (max-width: 768px) {
+  .goods-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.compact-goods-card {
+  height: 320px;
+  min-height: 320px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.compact-goods-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(255, 126, 41, 0.12);
+  border-color: #ffd8be;
+}
+
+.compact-goods-thumb {
+  width: 100%;
+  height: 200px;
+  min-height: 200px;
+  max-height: 200px;
+  position: relative;
+  background: #f8fafc;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+.compact-goods-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain !important;
+  transition: transform .3s ease;
+}
+
+.compact-goods-card:hover .compact-goods-img {
+  transform: scale(1.05);
+}
+
+.compact-goods-info {
+  height: 118px;
+  min-height: 118px;
+  max-height: 118px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.compact-goods-name {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 19px;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
+
+.compact-goods-descr {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 16px;
+  height: 16px;
+  min-height: 16px;
+  max-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-goods-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding-top: 6px;
+  border-top: 1px dashed #f1f5f9;
+  box-sizing: border-box;
+}
+
+.compact-goods-price {
+  color: #ff5722;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1;
+}
+
+.compact-goods-user {
+  font-size: 11px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 3px 8px;
+  border-radius: 6px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .compact-goods-card {
+    height: 260px;
+    min-height: 260px;
+    max-height: 260px;
+  }
+  .compact-goods-thumb {
+    height: 150px;
+    min-height: 150px;
+    max-height: 150px;
+  }
+  .compact-goods-info {
+    height: 108px;
+    min-height: 108px;
+    max-height: 108px;
+    padding: 8px 10px;
+  }
+}
 </style>
