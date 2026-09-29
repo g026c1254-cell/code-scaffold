@@ -13,14 +13,13 @@
       </div>
     </div>
 
-    <!-- 分类按钮：已按要求彻底去除所有背景色（透明背景） -->
+    <!-- 分类按钮：完全透明、清爽轮廓风格 -->
     <div class="category-area">
       <div class="type-group">
         <button
           type="button"
           class="type-chip-btn"
-          :class="{ 'type-selected': selectedCategoryId === 0 }"
-          @click="handleAllClick">
+          :class="{ 'type-selected': selectedCategoryId === 0 }"          @click="handleAllClick">
           すべて
         </button>
         <button
@@ -28,37 +27,42 @@
           class="type-chip-btn"
           v-for="(category,index) in types"
           :key="index"
-          :class="{ 'type-selected': selectedCategoryId === category.id }"
-          @click="handleCategoryClick(category)">
+          :class="{ 'type-selected': selectedCategoryId === category.id }"          @click="handleCategoryClick(category)">
           {{ displayTypeName(category.name) }}
         </button>
       </div>
     </div>
 
+    <!-- 商品网格列表：向前紧凑对齐，无散落空白 -->
     <div>
-      <el-row :gutter="20" v-if="goods.length > 0">
-        <el-col :xs="12" :sm="8" :md="6" v-for="(item,index) in goods" :key="index" class="goods-col">
-          <el-card :body-style="{ padding: '0px' }" class="card-item" @click.native="goDetail(item.id)">
-            <!-- 商品封面图片容器：等比缩小显示完整商品，绝不裁切 -->
-            <div class="goods-image-box">
-              <img :src="item.cover" :alt="item.name" class="goods-image">
+      <div v-if="goods.length > 0" class="goods-grid-wrapper">
+        <div
+          v-for="(item, index) in goods"
+          :key="item.id || index"
+          class="card-item"
+          @click="goDetail(item.id)"
+        >
+          <!-- 商品封面图片容器：等比缩小显示完整商品，绝不裁剪 -->
+          <div class="goods-image-box">
+            <img :src="getImageUrl(item.cover)" @error="handleImageError" :alt="item.name" class="goods-image">
+          </div>
+          <div class="goods-content">
+            <div class="goods-name" :title="item.name">
+              {{ item.name }}
             </div>
-            <div class="goods-content">
-              <div class="goods-name">
-                {{item.name}}
-              </div>
-              <div class="goods-descr">
-                {{ stripHtml(item.content || item.descr) }}
-              </div>
-              <div class="goods-meta">
-                <div class="goods-price">{{item.price}}円</div>
-              </div>
-              <div class="publisher-tag">{{ $t('common.publisher') }}：{{ item.userName || $t('common.anonymous') }}</div>
+            <div class="goods-descr" :title="stripHtml(item.content || item.descr)">
+              {{ stripHtml(item.content || item.descr) || '' }}
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <div v-if="total > 0" style="margin-top: 20px; text-align: right;">
+            <div class="goods-footer-row">
+              <div class="goods-price">{{ item.price }}円</div>
+              <div class="publisher-tag" :title="item.userName || $t('common.anonymous')">
+                <i class="el-icon-user"></i> {{ item.userName || $t('common.anonymous') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="total > 0" style="margin-top: 24px; text-align: right;">
         <el-pagination
             @current-change="handleCurrentChange"
             :current-page="pageNum"
@@ -80,8 +84,8 @@
 <script>
 export default {
   name: "Goods",
-  data(){
-    return{
+  data() {
+    return {
       types: [],
       selectedCategoryId: parseInt(this.$route.query.selectedCategoryId) || 0,
       total: 0,
@@ -110,7 +114,17 @@ export default {
       }
     }
   },
-  methods:{
+  methods: {
+    getImageUrl(url) {
+      if (!url) return require('@/assets/empty.svg')
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+        return url
+      }
+      return this.$baseUrl + (url.startsWith('/') ? url : '/' + url)
+    },
+    handleImageError(e) {
+      e.target.src = require('@/assets/empty.svg')
+    },
     displayTypeName(name) {
       if (!name) return ''
       const categoryMap = {
@@ -138,12 +152,12 @@ export default {
       }
       this.$router.push({ name: 'GoodsDetail', query: { id } })
     },
-    loadType(){
+    loadType() {
       this.$request.get('/type/selectAll').then(res => {
         this.types = Array.isArray(res.data) ? res.data : []
       })
     },
-    loadGoods(){
+    loadGoods() {
       this.$request.get("/goods/selectPage/type", {
         params: {
           pageNum: this.pageNum,
@@ -174,8 +188,8 @@ export default {
       }).catch(() => {})
       this.loadGoods()
     },
-    handleCurrentChange(pageNum){
-      this.pageNum = pageNum;
+    handleCurrentChange(pageNum) {
+      this.pageNum = pageNum
       this.loadGoods()
     },
     stripHtml(value) {
@@ -189,7 +203,7 @@ export default {
 
 <style scoped>
 .goods-page {
-  width: min(1180px, 92%);
+  width: min(1240px, 94%);
   min-height: 90vh;
   margin: 20px auto;
 }
@@ -206,7 +220,7 @@ export default {
   align-items: center;
 }
 
-.search-input{
+.search-input {
   width: 240px;
   padding: 12px 16px;
   outline: none;
@@ -222,7 +236,7 @@ export default {
   border-color: #ff8a3d;
 }
 
-.search-button{
+.search-button {
   padding: 12px 18px;
   background: linear-gradient(135deg, #ffa86b 0%, #ff7e29 100%);
   border: none;
@@ -276,7 +290,6 @@ export default {
   justify-content: center;
 }
 
-/* 未选中状态 hover效果：依然无背景色，淡橘色边框与文字 */
 .type-chip-btn:hover {
   background: transparent !important;
   background-color: transparent !important;
@@ -285,7 +298,6 @@ export default {
   transform: translateY(-1px);
 }
 
-/* 选中状态样式：去掉背景色，2px淡橘强调边框与深橘文字 */
 .type-chip-btn.type-selected {
   background: transparent !important;
   background-color: transparent !important;
@@ -295,90 +307,154 @@ export default {
   box-shadow: none !important;
 }
 
+/* 商品卡片网格布局：严格向前对齐，列宽一致，消除散落空白 */
+.goods-grid-wrapper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+  width: 100%;
+}
+
+@media (max-width: 992px) {
+  .goods-grid-wrapper {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .goods-grid-wrapper {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
 .card-item {
+  height: 310px;
+  min-height: 310px;
+  max-height: 310px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, .8);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
-  transition: transform .25s ease, box-shadow .25s ease;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
   overflow: hidden;
-  background: #ffffff;
-}
-
-.card-item:hover{
   cursor: pointer;
+  box-sizing: border-box;
+}
+
+.card-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(255, 126, 41, .15);
+  box-shadow: 0 10px 22px rgba(255, 126, 41, .15);
+  border-color: #ffd8be;
 }
 
-.goods-col {
-  margin-top: 18px;
-}
-
-/* 商品封面图片容器：等比缩放展示，居中纯白衬托，不截断 */
+/* 商品封面图片容器：等比缩小居中显示完整商品，绝不裁剪 */
 .goods-image-box {
   width: 100%;
-  height: 200px;
+  height: 195px;
+  min-height: 195px;
+  max-height: 195px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: #f8fafc;
   overflow: hidden;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 8px;
+  box-sizing: border-box;
 }
 
 .goods-image {
   max-width: 100%;
   max-height: 100%;
-  width: 100%;
-  height: 100%;
-  object-fit: contain !important; /* 等比缩小完整显示图片，绝不裁切部分 */
+  width: auto;
+  height: auto;
+  object-fit: contain !important;
   display: block;
+  transition: transform .3s ease;
+}
+
+.card-item:hover .goods-image {
+  transform: scale(1.05);
 }
 
 .goods-content {
-  padding: 12px;
+  height: 115px;
+  min-height: 115px;
+  max-height: 115px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .goods-name {
   color: #1e293b;
   font-size: 14px;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 19px;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   text-overflow: ellipsis;
+  word-break: break-all;
 }
 
 .goods-descr {
-  margin-top: 7px;
+  margin-top: 2px;
   color: #94a3b8;
   font-size: 12px;
+  line-height: 16px;
+  height: 16px;
+  min-height: 16px;
+  max-height: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.goods-meta {
+.goods-footer-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding-top: 6px;
+  border-top: 1px dashed #f1f5f9;
+  box-sizing: border-box;
 }
 
 .goods-price {
   color: #ff7e29;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .publisher-tag {
-  display: inline-block;
-  max-width: 100%;
-  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 110px;
   padding: 3px 8px;
-  border-radius: 12px;
+  border-radius: 6px;
   color: #64748b;
-  background: #f1f5f9;
+  background: #f8fafc;
   font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 @media (max-width: 768px) {
@@ -394,17 +470,25 @@ export default {
     flex: 1;
     width: 100%;
   }
-  /* 手机端：商品封面等比缩小显示，绝不被裁切 */
+}
+
+@media (max-width: 640px) {
+  .card-item {
+    height: 260px;
+    min-height: 260px;
+    max-height: 260px;
+  }
   .goods-image-box {
     height: 150px;
-    background: #ffffff;
+    min-height: 150px;
+    max-height: 150px;
+    padding: 6px;
   }
-  .goods-image {
-    max-width: 100%;
-    max-height: 100%;
-    width: 100%;
-    height: 100%;
-    object-fit: contain !important;
+  .goods-content {
+    height: 110px;
+    min-height: 110px;
+    max-height: 110px;
+    padding: 8px 10px;
   }
 }
 </style>
